@@ -1,0 +1,4 @@
+.ide
+build/**
+dist
+.quickapp.prevew.json
