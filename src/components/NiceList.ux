@@ -53,12 +53,10 @@
 </template>
 
 <script>
-import $config from './../config'
-import marked from 'marked'
 
 export default {
   data: {
-    themeList: $config.theme,
+    themeList: [],
     likeIcon: './../assets/icons/main.svg'
   },
   props: [
@@ -80,9 +78,9 @@ export default {
   },
   onShareClick() {
     const targetUrl = `https://nicelinks.site/post/${this.pdata._id}?utm_source=quickapp-share`
-    const summary = marked(this.pdata.review || this.pdata.desc, {
-      sanitize: true
-    }).replace(/<(.|\n)*?>/g, '')
+    // const summary = marked(this.pdata.review || this.pdata.desc, {
+    //   sanitize: true
+    // }).replace(/<(.|\n)*?>/g, '')
     const params = {
       title: this.pdata.title,
       summary: `${summary}来自#技术站#「快应用」`,

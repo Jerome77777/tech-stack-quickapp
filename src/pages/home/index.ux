@@ -1,8 +1,4 @@
 <import
-  name="book-introduction"
-  src="../../components/book/book-introduction.ux"
-></import>
-<import
   name="ad-component"
   src="../../components/ad-component/index.ux"
 ></import>
@@ -10,18 +6,12 @@
 <template>
   <div class="wrapper">
     <swiper class="swiper">
-      <book-introduction
-        class="book-introduction"
-        for="{{recommend}}"
-        book-info="{{$item}}"
-        lines="6"
-      ></book-introduction>
+      
     </swiper>
     <ad-component if="{{activeTab === 0 && !showTips}}"></ad-component>
     <div class="book-classify">
       <text class="title">我的书架</text>
       <div for="{{myBooks}}" class="mybook-introduction">
-        <book-introduction book-info="{{$item}}" lines="2"></book-introduction>
       </div>
       <div if="{{myBooks.length === 0}}" class="empty-data">
         <text>暂无书籍</text>
@@ -59,10 +49,7 @@
       </div>
       <div class="content">
         <div for="{{moreBooks}}" class="mybook-introduction">
-          <book-introduction
-            book-info="{{$item}}"
-            lines="2"
-          ></book-introduction>
+          
         </div>
       </div>
     </div>
@@ -135,7 +122,6 @@ export default {
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
-  background-color: @bg;
   .swiper {
     height: @gap-4 * 12;
     background-color: #fff;

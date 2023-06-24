@@ -2,3 +2,4 @@
 build/**
 dist
 .quickapp.prevew.json
+node_modules

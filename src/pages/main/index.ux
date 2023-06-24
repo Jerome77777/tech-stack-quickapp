@@ -1,23 +1,6 @@
 <template>
   <div class="home-page">
     <Loading if="{{ isLoading }}" />
-    <TitleBar
-      home="true"
-      @menu-click="handleMenuClick"
-      @title-click="handleTitleClick"
-      title="技术站"
-    >
-      <input
-        class="title-bar-button search"
-        type="button"
-        @click="onSearchClick"
-      />
-      <input
-        type="button"
-        class="title-bar-button home-btn"
-        @click="onHomeClick"
-      />
-    </TitleBar>
     <tabs
       onchange="onChangeTabIndex"
       index="{{currentIndex}}"
@@ -60,24 +43,16 @@ export default {
     isLoading: false,
     tabBarList: [
       {
-        name: '热门',
-        sortTarget: 'likes',
-        sortType: -1
+        name: '全部',
       },
       {
-        name: '最新',
-        sortTarget: 'created',
-        sortType: -1
+        name: '前端',
       },
       {
-        name: '最早',
-        sortTarget: 'created',
-        sortType: 1
+        name: '后端',
       },
       {
-        name: '冷门',
-        sortTarget: 'likes',
-        sortType: 1
+        name: '大数据',
       }
     ],
     isShowTabs: true,
