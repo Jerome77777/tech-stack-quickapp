@@ -1,0 +1,198 @@
+<template>
+  <div>
+    <div show="{{ config.enable }}">
+      <div
+        if="{{ adData }}"
+        class="part-ad {{ config.adSlotName === 'exitAd' ? 'exit-ad' : '' }}"
+      >
+        <ad
+          if="{{ adData && config.type === 'nativeAd' }}"
+          adId="{{ adData.adId }}"
+          @error="handleAdError"
+          @adclick="handleAdClick"
+        >
+          <div class="dialog">
+            <text if="{{ config.adSlotName === 'exitAd' }}" class="dialog-title"
+              >真的要退出吗？</text
+            >
+            <div else style="flex-direction: column;">
+              <text class="dialog-title">不感兴趣？</text>
+              <text class="dialog-desc">{{ adData.title || adData.desc }}</text>
+            </div>
+
+            <!-- 视频广告 -->
+            <ad-clickable-area
+              if="{{ adData.creativeType === 4 }}"
+              type="video-click"
+              class="dialog-image"
+            ></ad-clickable-area>
+            <ad-clickable-area else type="click" class="dialog-image">
+              <image
+                src="{{ adData.imgUrlList ? adData.imgUrlList[0] : adData.icon }}"
+                class="dialog-ad-image"
+              ></image>
+              <image
+                if="{{ adData.logoUrl }}"
+                src="{{ adData.logoUrl }}"
+                class="dialog-ad-text"
+              ></image>
+              <text else class="dialog-ad-text">广告</text>
+            </ad-clickable-area>
+
+            <div class="dialog-buttons">
+              <text
+                if="{{ config.adSlotName === 'exitAd' }}"
+                class="button button-cancel"
+                @click="handleCancelClick"
+                >退出</text
+              >
+              <text else class="button button-cancel" @click="handleCancelClick"
+                >关闭</text
+              >
+
+              <ad-clickable-area
+                type="button"
+                class="button button-primary"
+                value="查看并离开"
+              ></ad-clickable-area>
+            </div>
+
+            <image
+              class="close"
+              src="../../../assets/images/x.svg"
+              @click="handleCancelClick"
+            ></image>
+          </div>
+        </ad>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import ad from '@service.ad'
+
+export default {
+  props: {
+    config: {
+      type: Object,
+      default: {
+        enable: false
+      }
+    }
+  },
+
+  data: {
+    adData: null
+  },
+
+  onInit() {
+    this.$watch('config', 'handleConfigChange')
+    if (this.config.adId) {
+      this.handleConfigChange(this.config)
+    }
+  },
+
+  onDestroy() {
+    this.adDestroy()
+  },
+
+  handleConfigChange(config) {
+    const { adId, adSlotName, displayTimes } = config
+    if (!adId) {
+      this.adClose()
+      return
+    }
+
+    try {
+      if (adSlotName === 'webviewAd') {
+        displayTimes.forEach(time => {
+          setTimeout(() => this.adRequest(), time * 1000)
+        })
+      } else {
+        this.adRequest()
+      }
+    } catch (error) {
+      this.adClose()
+    }
+  },
+
+  handleAdClick() {
+    const { adSlotName, adId, type: adType } = this.config
+
+    $utils.analytics('custom', this.adData.appInfo.appName || '')
+    // analytics('adClick', {
+    //   adSlotName,
+    //   adId,
+    //   adType,
+    //   adData: this.adData
+    // })
+    this.adClose()
+  },
+
+  handleCancelClick() {
+    const { adSlotName, adId, type: adType } = this.config
+    this.adClose()
+    // analytics('adClose', { adSlotName, adId, adType })
+  },
+
+  handleAdError(error) {
+    const { adSlotName, adId, type: adType } = this.config
+    // analytics('adError', {
+    //   adSlotName,
+    //   adId,
+    //   adType,
+    //   adData: { error }
+    // })
+    if (!this.adData) this.adClose()
+    this.$emit('error')
+  },
+
+  adRequest() {
+    // const channel = getGlobalData('pid')
+    const { adSlotName, adId, type: adType } = this.config
+    ad.preloadAd({
+      adUnitId: adId,
+      type: 'native',
+      // channel,
+      success: data => {
+        console.log('data', data)
+        this.adExposure(data.adList[0])
+      },
+      fail: (data, code) => {
+        if (code === 205) {
+          console.log('data', data)
+          this.adExposure(data.adList[0])
+        } else {
+          this.handleAdError(data)
+        }
+      }
+    })
+
+    // analytics('adRequest', { adSlotName, adId, adType })
+  },
+
+  adExposure(adData) {
+    const { adSlotName, adId, type: adType } = this.config
+    this.adData = adData
+    this.$emit('show')
+    // analytics('adExposure', {
+    //   adSlotName,
+    //   adId,
+    //   adType,
+    //   adData: this.adData
+    // })
+  },
+
+  adClose() {
+    this.adDestroy()
+    this.$emit('close')
+  },
+
+  adDestroy() {
+    this.adData = null
+  }
+}
+</script>
+
+<style src="./index.css"></style>

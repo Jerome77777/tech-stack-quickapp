@@ -1,0 +1,203 @@
+<template>
+  <div class="home-page">
+    <Loading if="{{ isLoading }}" />
+    <TitleBar
+      home="true"
+      @menu-click="handleMenuClick"
+      @title-click="handleTitleClick"
+      title="技术站"
+    >
+      <input
+        class="title-bar-button search"
+        type="button"
+        @click="onSearchClick"
+      />
+      <input
+        type="button"
+        class="title-bar-button home-btn"
+        @click="onHomeClick"
+      />
+    </TitleBar>
+    <tabs
+      onchange="onChangeTabIndex"
+      index="{{currentIndex}}"
+      if="{{isShowTabs}}"
+    >
+      <tab-bar class="tab-bar" mode="scrollable">
+        <stack class="tab-item-warp" for="(index, item) in tabBarList">
+          <text class="tab-item {{index===currentIndex ? 'active' : ''}}">{{
+            item.name
+          }}</text>
+          <div if="index===currentIndex" class="line"></div>
+        </stack>
+      </tab-bar>
+      <tab-content if="isShowTabContent">
+        <div for="(index, $item) in tabBarList">
+          <TabItem
+            pdata="{{$item}}"
+            @update-callback="onUpdateCallback"
+            if="index===currentIndex"
+          />
+        </div>
+      </tab-content>
+    </tabs>
+    <stack show="{{isShowSidebar}}" class="mask-shadow" @click="hideSidebar">
+      <Sidebar open="{{isShowSidebar}}" @hide-sidebar="hideSidebar"></Sidebar>
+    </stack>
+  </div>
+</template>
+
+<import name="TitleBar" src="./../../components/TitleBar"></import>
+<import name="Sidebar" src="./../../components/Sidebar"></import>
+<import name="TabItem" src="./../../components/TabItem"></import>
+<import name="Loading" src="./../../components/Loading"></import>
+
+<script>
+import prompt from '@system.prompt'
+export default {
+  private: {
+    currentIndex: 0,
+    isLoading: false,
+    tabBarList: [
+      {
+        name: '热门',
+        sortTarget: 'likes',
+        sortType: -1
+      },
+      {
+        name: '最新',
+        sortTarget: 'created',
+        sortType: -1
+      },
+      {
+        name: '最早',
+        sortTarget: 'created',
+        sortType: 1
+      },
+      {
+        name: '冷门',
+        sortTarget: 'likes',
+        sortType: 1
+      }
+    ],
+    isShowTabs: true,
+    isShowSidebar: false,
+    isShowTabContent: true
+  },
+
+  onInit() {},
+
+  onShow() {
+    this.$page.setMeta({
+      title: '技术站 - 主页',
+      pic:
+        'https://oss.nicelinks.site/nicelinks.site.png?x-oss-process=style/png2jpg',
+      description:
+        '技术站，作为一个开放平台，旨在云集全球优秀网站，探索互联网中更广阔的世界；在这里，你可以轻松发现、学习、分享更多有用或有趣的事物。',
+      keywords:
+        '技术站, nice links, 资源之家, 新媒体导航, 网站, 利器, 新世界, 技术, 产品, 有趣, 人文, 历史, 工具, 社区, 旅行, 美图, 历史, 人文, 娱乐, 抠图, 高效, 搜商, 搜索, 引擎, 思谷搜, 快应用, 翁天信, 天空之城'
+    })
+  },
+
+  /* -----------------onCallBackEvent----------------- */
+  hideSidebar(response) {
+    this.isShowSidebar = false
+    // $utils.promptMessage(JSON.stringify(response, null, 2))
+    if (!response.detail || response.detail.classify === undefined) return
+
+    this.isLoading = true
+
+    this.isShowTabContent = false
+    const classifyMapping = {
+      skill: '0',
+      resource: '1',
+      life: '2',
+      info: '3'
+    }
+    const tempArray = JSON.parse(JSON.stringify(this.tabBarList))
+    tempArray.forEach(item => {
+      item.classify = classifyMapping[response.detail.classify] || ''
+    })
+    this.tabBarList = tempArray
+    this.isShowTabContent = true
+  },
+  onUpdateCallback() {
+    this.isLoading = false
+  },
+  onWatchCurrentIndex(newValue, oldValue) {},
+  onHomeClick() {
+    $utils.route2theUrl('/pages/main')
+  },
+  handleMenuClick() {
+    this.isShowSidebar = true
+  },
+  handleTitleClick() {
+    $utils.route2nicelinks()
+  },
+  onChangeTabIndex(evt) {
+    this.$broadcast('changeTab')
+    this.currentIndex = evt.index
+  }
+}
+</script>
+
+<style lang="less">
+@import './../../assets/styles/index.less';
+
+.home-page {
+  flex: 1;
+  flex-direction: column;
+  background-color: @white-grey;
+  .search {
+    background-image: url('./../../assets/icons/search.png');
+  }
+  .share-btn {
+    background-image: url('./../../assets/icons/share.png');
+  }
+  .home-btn {
+    background-image: url('./../../assets/icons/home.png');
+  }
+  .tab-bar {
+    height: @tab-bar-height;
+    background-color: #ffffff;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-color: @border-grey;
+
+    .tab-item-warp {
+      flex: 1;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      color: @grey;
+
+      text {
+        width: 20 * @size-factor;
+        height: @tab-bar-height;
+        line-height: @tab-bar-height;
+        font-size: 4.5 * @size-factor;
+        color: #71777d;
+        text-align: center;
+      }
+
+      .active {
+        color: @brand;
+        font-size: 5 * @size-factor;
+      }
+      .line {
+        height: 4px;
+        width: 50%;
+        background-color: @brand;
+      }
+    }
+  }
+  .mask-shadow {
+    /* Confused：(fixed) 必须加，否则 opacity 不能很好的工作? */
+    position: fixed;
+    height: 100%;
+    width: 100%;
+    background-color: @grey-black;
+    opacity: 0.3;
+  }
+}
+</style>

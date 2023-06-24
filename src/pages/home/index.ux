@@ -1,0 +1,230 @@
+<import
+  name="book-introduction"
+  src="../../components/book/book-introduction.ux"
+></import>
+<import
+  name="ad-component"
+  src="../../components/ad-component/index.ux"
+></import>
+
+<template>
+  <div class="wrapper">
+    <swiper class="swiper">
+      <book-introduction
+        class="book-introduction"
+        for="{{recommend}}"
+        book-info="{{$item}}"
+        lines="6"
+      ></book-introduction>
+    </swiper>
+    <ad-component if="{{activeTab === 0 && !showTips}}"></ad-component>
+    <div class="book-classify">
+      <text class="title">我的书架</text>
+      <div for="{{myBooks}}" class="mybook-introduction">
+        <book-introduction book-info="{{$item}}" lines="2"></book-introduction>
+      </div>
+      <div if="{{myBooks.length === 0}}" class="empty-data">
+        <text>暂无书籍</text>
+      </div>
+      <tabs class="tabs" onchange="changeTabactive" index="{{activeTab}}">
+        <tab-bar class="tab-bar" mode="fixed">
+          <text class="tab-text">最热分类</text>
+          <text class="tab-text">更多分类</text>
+        </tab-bar>
+        <tab-content class="tab-content">
+          <div class="classify-wrap">
+            <text
+              class="classify-item"
+              for="{{hotclassify}}"
+              @click="handleClassifyClick($item)"
+              >{{ $item }}</text
+            >
+          </div>
+          <div class="classify-wrap">
+            <text
+              class="classify-item"
+              for="{{moreclassify}}"
+              @click="handleClassifyClick($item)"
+              >{{ $item }}</text
+            >
+          </div>
+        </tab-content>
+      </tabs>
+    </div>
+
+    <div class="more-book">
+      <div class="header">
+        <text class="title">更多小说</text>
+        <text>查看更多</text>
+      </div>
+      <div class="content">
+        <div for="{{moreBooks}}" class="mybook-introduction">
+          <book-introduction
+            book-info="{{$item}}"
+            lines="2"
+          ></book-introduction>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { hotclassify, moreclassify } from '../../assets/data/mock'
+import router from '@system.router'
+import { private_agree_key } from '../../helper/constants'
+
+export default {
+  data: {
+    recommend: [],
+    myBooks: [],
+    moreBooks: [],
+    activeTab: 0,
+    hotclassify,
+    moreclassify,
+    showTips: false
+  },
+
+  async onInit() {
+    this.$watch('pageShow', 'watchPageshowChange')
+  },
+
+  async watchPageshowChange() {
+    const tip = await $utils.getStorage(private_agree_key)
+    if (!tip) {
+      this.showTips = true
+    }
+    const data = await $apis.book.getAllBooks({
+      searchAll: 'true',
+      bookShelf: '',
+      searchType: '',
+      bookId: ''
+    })
+    this.myBooks = await $apis.book.getUserBooksShelf({
+      searchAll: false,
+      bookShelf: true
+    })
+    this.recommend = $utils.getRandomBooks(data)
+    this.moreBooks = $utils.getRandomBooks(data)
+  },
+
+  changeTabactive(e) {
+    this.activeTab = e.index
+  },
+  handleClassifyClick(classify) {
+    router.push({
+      uri: 'pages/book-list',
+      params: {
+        classify
+      }
+    })
+  },
+  handleAdClick(e) {
+    console.log('click', e)
+  },
+  handleAdClose() {
+    console.log('close')
+  }
+}
+</script>
+
+<style lang="less">
+@import '../../assets/styles/index.less';
+
+.wrapper {
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  background-color: @bg;
+  .swiper {
+    height: @gap-4 * 12;
+    background-color: #fff;
+    margin: @gap-2;
+    border-radius: @gap-2;
+    .book-introduction {
+      width: 100%;
+      height: 100%;
+    }
+  }
+  .book-classify {
+    .flex-box-mixins(column, flex-start, flex-start);
+    width: 100%;
+    padding: @gap-2 0;
+    border-top-right-radius: @gap-5;
+    border-top-left-radius: @gap-5;
+    background-color: #fff;
+    .title {
+      margin: 0 @gap-3;
+      font-size: @size-factor * 8;
+    }
+    .book-list {
+      .flex-box-mixins(column, flex-start, flex-start);
+    }
+    .mybook-introduction {
+      width: 100%;
+      height: @gap-3 * 14;
+    }
+    .tabs {
+      margin-top: @gap-2;
+    }
+    .tab-content {
+      height: 270px;
+      .classify-wrap {
+        width: 100%;
+        padding: 0 @gap-2;
+
+        .flex-box-mixins(row, flex-start, center);
+        flex-wrap: wrap;
+        .classify-item {
+          text-align: center;
+          height: @gap-5 * 2;
+          width: 220px;
+          background-color: #c3cfe2;
+          border-radius: @gap-4;
+          padding: 0 @gap-1 * 5;
+          margin-left: @gap-2;
+          margin-top: @gap-1;
+        }
+      }
+    }
+    .tab-bar {
+      .flex-box-mixins(row, flex-start, center);
+      width: 60%;
+    }
+    .tab-text {
+      font-size: @size-factor * 8;
+      font-weight: bold;
+    }
+    .tab-text:active {
+      color: #000;
+    }
+  }
+  .more-book {
+    width: 100%;
+    background-color: #fff;
+    .flex-box-mixins(column, flex-start, center);
+    .header {
+      padding: @gap-2;
+
+      width: 100%;
+      .flex-box-mixins(row, space-between, center);
+      .title {
+        font-size: @size-factor * 8;
+      }
+    }
+    .content {
+      .flex-box-mixins(column, flex-start, flex-start);
+    }
+  }
+}
+.empty-data {
+  height: 100px;
+  width: 100%;
+  .flex-box-mixins(row, center, center);
+  text {
+    line-height: 100px;
+    font-size: 30px;
+    text-align: center;
+  }
+}
+</style>

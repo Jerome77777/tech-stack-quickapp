@@ -1,0 +1,199 @@
+<template>
+  <div class="page-wrapper wrapper">
+    <!-- <PlaceholderLoading v-if="isRequestDataFlag"></PlaceholderLoading> -->
+    <div class="title-area">
+      <text class="title" @click="onTitleClick">{{
+        dealWithTitle(niceLinksItem.title)
+      }}</text>
+    </div>
+    <div class="content">
+      <text class="mp-space keywords" v-if="niceLinksItem.keywords">{{
+        niceLinksItem.keywords
+      }}</text>
+      <text class="mp-space desc">{{ niceLinksItem.desc }}</text>
+      <image
+        class="mp-space"
+        src="{{ getLinkScreenshot(niceLinksItem) }}"
+      ></image>
+      <richtext type="html" class="mp-space review">{{
+        reviewNodeStr
+      }}</richtext>
+      <div class="btn-group">
+        <input
+          class="button margin mp-space copy-button"
+          type="button"
+          value="复制链接"
+          onclick="onKnowMoreTap"
+        />
+        <input
+          class="button margin mp-space copy-button"
+          type="button"
+          value="分享链接"
+          onclick="onShareLinkTap"
+        />
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import marked from 'marked'
+export default {
+  protected: {
+    linkId: ''
+  },
+  private: {
+    isRequestDataFlag: true,
+    niceLinksItem: {},
+    reviewNodeStr: '',
+    currentSentenceStr: ''
+  },
+  onInit() {
+    this.setFetchData()
+    this.$page.setMeta({
+      title: '倾城之链',
+      pic:
+        'https://oss.nicelinks.site/nicelinks.site.png?x-oss-process=style/png2jpg',
+      description:
+        '倾城之链，作为一个开放平台，旨在云集全球优秀网站，探索互联网中更广阔的世界；在这里，你可以轻松发现、学习、分享更多有用或有趣的事物。',
+      keywords:
+        '倾城之链, nice links, 资源之家, 新媒体导航, 网站, 利器, 新世界, 技术, 产品, 有趣, 人文, 历史, 工具, 社区, 旅行, 美图, 历史, 人文, 娱乐, 抠图, 高效, 搜商, 搜索, 引擎, 思谷搜, 快应用, 翁天信, 天空之城'
+    })
+  },
+  onShow() {
+    APP_STATISTICS.page_show(this)
+  },
+  onHide() {
+    APP_STATISTICS.page_hide(this)
+  },
+  createShortcut() {
+    $utils.createShortcut()
+  },
+  getLinkScreenshot(item) {
+    if (item.urlPath) {
+      const hostname = item.urlPath.replace(/^https?:\/\//, '').replace('/', '')
+      return `https://oss.nicelinks.site/${hostname}.png?x-oss-process=style/png2jpg`
+    } else {
+      return 'https://oss.nicelinks.site/nicelinks.site.png?x-oss-process=style/png2jpg'
+    }
+  },
+  setFetchData() {
+    const params = {
+      _id: this.linkId
+    }
+    this.isRequestDataFlag = true
+    $apis.links
+      .getNiceLinks(params)
+      .then(result => {
+        this.reviewNodeStr = $utils.parseMarkdown(result[0].review)
+        this.niceLinksItem = result[0]
+      })
+      .catch(error => {
+        console.log(error)
+      })
+      .finally(() => {
+        this.isRequestDataFlag = false
+      })
+  },
+  updatePageMeta() {
+    this.$page.setMeta({
+      title: `${this.niceLinksItem.title} | 倾城之链`,
+      pic:
+        'https://oss.nicelinks.site/nicelinks.site.png?x-oss-process=style/png2jpg',
+      description: marked(
+        this.niceLinksItem.review || this.niceLinksItem.desc,
+        {
+          sanitize: true
+        }
+      ).replace(/<(.|\n)*?>/g, ''),
+      keywords:
+        this.niceLinksItem.keywords ||
+        '倾城之链, nice links, 资源之家, 新媒体导航, 网站, 利器, 新世界, 技术, 产品, 有趣, 人文, 历史, 工具, 社区, 旅行, 美图, 历史, 人文, 娱乐, 抠图, 高效, 搜商, 搜索, 引擎, 思谷搜, 快应用, 翁天信, 天空之城'
+    })
+  },
+  dealWithTitle(titleText) {
+    return $utils.interceptString(titleText, 25)
+  },
+  /* -------------------OnClickEvent--------------- */
+  onKnowMoreTap(item) {
+    const path = `https://nicelinks.site/post/${this.linkId}`
+    $utils.copy2clipboard(path, '👏 已成功将链接拷贝至剪切板')
+  },
+  onShareLinkTap() {
+    const targetUrl = `https://nicelinks.site/post/${this.niceLinksItem._id}?utm_source=quickapp-share`
+    const summary = marked(
+      this.niceLinksItem.review || this.niceLinksItem.desc,
+      {
+        sanitize: true
+      }
+    ).replace(/<(.|\n)*?>/g, '')
+    const params = {
+      title: this.niceLinksItem.title,
+      summary: `${summary}来自#倾城之链#「快应用」`,
+      targetUrl: targetUrl
+    }
+    $utils.call3thPartyShare(params)
+  }
+}
+</script>
+
+<style type="text/css" lang="less" scoped>
+@import './../../assets/styles/style.less';
+.wrapper {
+  backdrop-filter: blur(15px);
+  background-color: rgba(255, 255, 255, 0.618);
+  padding: 3 * @size-factor;
+}
+.mp-space {
+  margin-top: 2 * @size-factor;
+}
+.title-area {
+  width: 100%;
+  height: 11.5 * @size-factor;
+  position: fixed;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background-color: @tab-bar-color;
+  .title {
+    overflow: hidden;
+    font-size: 5 * @size-factor;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-weight: 600;
+    text-decoration: none;
+    color: @ink-black;
+    text-align: left;
+  }
+}
+.content {
+  margin-top: 6 * @size-factor;
+  .flex-box-mixins(column, top, left);
+  flex-direction: column;
+  justify-content: flex-start;
+  background-color: @white;
+  .sentence-title {
+    padding: 3 * @size-factor;
+  }
+  .desc {
+    font-size: 4.5 * @size-factor;
+    color: @silver-grey;
+    border-left: 2px solid #343434;
+    padding: 0 4 * @size-factor;
+  }
+  .keywords,
+  .review {
+    width: 100%;
+    color: @black-grey;
+    font-size: 4.5 * @size-factor;
+  }
+  .btn-group {
+    width: 100%;
+    .flex-box-mixins(row, space-around, center);
+    .copy-button {
+      width: 38 * @size-factor;
+    }
+  }
+}
+</style>

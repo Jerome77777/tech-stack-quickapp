@@ -1,0 +1,198 @@
+<template>
+  <div>
+    <div show="{{ config.enable }}">
+      <ad
+        if="{{ adId && config.type === 'nativeAd' }}"
+        adunitid="{{ adId }}"
+        type="native"
+        @load="handleAdLoaded"
+        @error="handleAdError"
+      >
+        <div class="native-ad">
+          <div class="dialog">
+            <text
+              if="{{ config.adSlotName === 'exitAd' }}"
+              class="dialog-title"
+              style="{{ styles['title'].style }}"
+              >真的要退出吗？</text
+            >
+            <text
+              else
+              class="dialog-title"
+              style="{{ styles['title'].style }}"
+              >{{ styles['title'].text || '不感兴趣？' }}</text
+            >
+            <text class="dialog-desc">{{ adData.title || adData.desc }}</text>
+
+            <ad-clickable-area
+              type="click"
+              class="dialog-image"
+              @click="handleAdClick"
+            >
+              <image
+                src="{{ adData.imgUrlList ? adData.imgUrlList[0] : adData.icon }}"
+                class="dialog-ad-image"
+                style="{{ styles.image && styles.image.style }}"
+              ></image>
+              <image
+                if="{{ adData.logoUrl }}"
+                src="{{ adData.logoUrl }}"
+                class="dialog-ad-text"
+              ></image>
+              <text else class="dialog-ad-text">广告</text>
+            </ad-clickable-area>
+
+            <div
+              class="dialog-buttons"
+              style="{{ styles.buttons && styles.buttons.style }}"
+            >
+              <text
+                if="{{ config.adSlotName === 'exitAd' }}"
+                class="button button-cancel"
+                @click="handleCancelClick"
+                style="{{ styles['button-cancel'] && styles['button-cancel'].style }}"
+                >退出</text
+              >
+              <text
+                else
+                class="button button-cancel"
+                @click="handleCancelClick"
+                style="{{ styles['button-cancel'] && styles['button-cancel'].style }}"
+                >{{
+                  styles['button-cancel']
+                    ? styles['button-cancel'].text
+                    : '关闭'
+                }}</text
+              >
+
+              <ad-clickable-area
+                type="button"
+                @click="handleAdClick"
+                class="button button-primary"
+                style="{{ styles['button-primary'] && styles['button-primary'].style }}"
+              >
+                <text
+                  style="{{ styles['button-primary'] && styles['button-primary'].style }}"
+                  >{{
+                    styles['button-primary']
+                      ? styles['button-primary'].text
+                      : '查看并离开'
+                  }}</text
+                >
+              </ad-clickable-area>
+            </div>
+
+            <image
+              class="close"
+              src="../../../assets/images/x.svg"
+              style="{{ styles['close'] && styles['close'].style }}"
+              @click="handleCancelClick"
+            ></image>
+          </div>
+        </div>
+      </ad>
+    </div>
+  </div>
+</template>
+
+<script>
+import ad from '@service.ad'
+
+export default {
+  props: {
+    config: {
+      type: Object,
+      default: {
+        enable: false
+      }
+    },
+
+    styles: {
+      type: Object
+    }
+  },
+
+  data: {
+    adId: '',
+    adData: {}
+  },
+
+  onInit() {
+    this.$watch('config', 'handleConfigChange')
+    if (this.config.adId) {
+      this.handleConfigChange(this.config)
+    }
+  },
+
+  onDestroy() {
+    this.adDestroy()
+  },
+
+  handleConfigChange(config) {
+    const { adSlotName, adId, type: adType } = this.config
+    this.adId = adId
+    ad.preloadAd({
+      adUnitId: adId,
+      type: 'native',
+      // channel,
+      success: data => {
+        console.log('data', data)
+        this.adExposure(data.adList[0])
+      },
+      fail: (data, code) => {
+        if (code === 205) {
+          console.log('data', data)
+          this.adExposure(data.adList[0])
+        } else {
+          this.handleAdError(data)
+        }
+      }
+    })
+  },
+
+  handleAdClick() {
+    const { adSlotName, adId, type: adType } = this.config
+    $utils.analytics('custom', this.adData.appInfo.appName || '')
+    this.adClose()
+  },
+
+  handleCancelClick() {
+    const { adSlotName, adId, type: adType } = this.config
+    this.adClose()
+  },
+
+  handleAdLoaded(event) {
+    try {
+      const adData = JSON.parse(event.adData)
+      this.adExposure(adData)
+    } catch (error) {
+      this.adClose()
+    }
+  },
+
+  handleAdError(error) {
+    const { adSlotName, adId, type: adType } = this.config
+
+    this.adClose()
+    this.$emit('error')
+  },
+
+  adExposure(adData) {
+    const { adSlotName, adId, type: adType } = this.config
+    this.adData = adData
+    this.$emit('show')
+  },
+
+  adClose() {
+    this.adDestroy()
+    this.$emit('close')
+  },
+
+  adDestroy() {
+    this.adData = {}
+    this.adId = ''
+  }
+}
+</script>
+
+<style src="./index.css"></style>

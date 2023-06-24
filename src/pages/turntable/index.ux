@@ -1,0 +1,140 @@
+<template>
+  <div class="wrapper">
+    <stack class="turntable">
+      <stack class="turntable-wrap" id="animation">
+        <image class="bg" src="../../assets/images/gold/lotteryBg.png"></image>
+        <div class="gift-container">
+          <div for="{{prizeList}}" class="gift-item">
+            <div class="item" style="transform: rotate({{$idx * 45 + 'deg'}})">
+              <text>{{ $item.name }}</text>
+              <image src="{{$item.pictures}}"></image>
+            </div>
+          </div>
+        </div>
+      </stack>
+      <image
+        @click="handleDrawClick"
+        class="btn"
+        src="../../assets/images/gold/lotteryButton.png"
+      ></image>
+    </stack>
+    <text class="left-chance">剩余 {{ count }} 次机会</text>
+  </div>
+</template>
+
+<script>
+let $animation = null
+export default {
+  data: {
+    count: 1,
+    rotateAngle: '',
+    tranInof: '',
+    prizeList: [
+      {
+        name: '谢谢参与',
+        pictures: ''
+      },
+      {
+        name: '188书币',
+        pictures: '../../assets/images/gold/currency.png'
+      },
+      {
+        name: '谢谢参与',
+        pictures: ''
+      },
+      {
+        name: '188书币',
+        pictures: '../../assets/images/gold/currency.png'
+      },
+      {
+        name: '谢谢参与',
+        pictures: ''
+      },
+      {
+        name: '188书币',
+        pictures: '../../assets/images/gold/currency.png'
+      },
+      {
+        name: '谢谢参与',
+        pictures: ''
+      },
+      {
+        name: '188书币',
+        pictures: '../../assets/images/gold/currency.png'
+      }
+    ]
+  },
+
+  onInit() {},
+  handleDrawClick() {
+    const keyframes = [
+      {
+        transform: 'rotate(0deg)',
+        time: 0
+      },
+      {
+        transform: `rotate(${45 * 11}deg)`,
+        time: 100
+      }
+    ]
+    const options = {
+      duration: 3000,
+      easing: 'linear',
+      delay: 0,
+      fill: 'forwards',
+      iterations: 1
+    }
+    const cAnimationNode = this.$element('animation')
+    $animation = cAnimationNode.animate(keyframes, options)
+    // 将会延迟至 (delay + startTime) ms 后执行动画；
+
+    $animation.play()
+  }
+}
+</script>
+
+<style lang="less">
+@import '../../assets/styles/index.less';
+
+.wrapper {
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  background-color: @bg;
+  .turntable {
+    margin-top: 20px;
+    width: 100%;
+    .flex-box-mixins(column, center, center);
+    .turntable-wrap {
+      .flex-box-mixins(column, center, center);
+      .gift-container {
+        width: 640px;
+        height: 640px;
+        image {
+          width: 60px;
+        }
+        .gift-item {
+          position: absolute;
+          .flex-box-mixins(column, center, center);
+          width: 100%;
+          height: 100%;
+          .item {
+            width: 180px;
+            height: 66%;
+            .flex-box-mixins(column, flex-start, center);
+          }
+        }
+      }
+    }
+    .btn {
+      width: 200px;
+    }
+    .bg {
+      width: 640px;
+    }
+  }
+  .left-chance {
+    margin-top: 20px;
+  }
+}
+</style>

@@ -1,0 +1,362 @@
+<import name="q-progress" src="qaui/src/components/progress/index"></import>
+<import name="ad-part" src="../../components/ad-part/index.ux"></import>
+
+<template>
+  <div class="wrapper">
+    <div class="sign-in">
+      <div class="header">
+        <text>每天签到做任务，领取书币免费看</text>
+        <div class="rules" @click="handleRuleClick">
+          <text>规则</text>
+        </div>
+      </div>
+      <div class="content">
+        <div
+          for="{{signInGlods}}"
+          class="day-sign"
+          style="{{signDaysFlag[$idx] === 1 ? 'background-color: #f4f6fa;' : 'background-color: #ffe4c4;'}}"
+        >
+          <text>{{ $item }}</text>
+          <image src="../../assets/images/gold/currency.png"></image>
+        </div>
+      </div>
+      <div class="footer">
+        <input
+          type="button"
+          class="sign-in-click"
+          style="{{disabledSign ? 'background-color: #f4f6fa;': ''}}"
+          disabled="{{disabledSign}}"
+          value="{{signText}}"
+          @click="handleSignIn"
+        />
+      </div>
+    </div>
+    <ad-part if="{{pageShow}}"></ad-part>
+    <ad-custom
+      if="{{customRender && pageShow}}"
+      adUnitId="{{customRender}}"
+    ></ad-custom>
+    <!-- <div class="total-sign-in">
+      <div class="item" for="{{totalSignIn}}">
+        <text>{{ $item.text1 }}</text>
+        <text>{{ $item.text2 }}</text>
+        <image
+          src="../../assets/images/gold/currency.png"
+          style="margin: 15px"
+        ></image>
+        <q-progress
+          percentage="{{continuitySignDay/$item.totalDay * 100}}"
+          stroke-color="{{'#2edfa3'}}"
+        ></q-progress>
+        <text>{{ $item.text3 }}</text>
+      </div>
+    </div> -->
+    <!-- <div class="turntable">
+      <div class="left" @click="handleTurntableClick">
+        <image src="../../assets/images/gold/lotteryBg.png"></image>
+        <text>福利转盘</text>
+      </div>
+      <div class="right">
+        <image src="../../assets/images/gold/gift.png"></image>
+        <text>签到领好礼</text>
+      </div>
+    </div> -->
+    <div class="mask" if="{{showRule}}" @click="handleMaskClick">
+      <div class="content-wrap">
+        <div class="content">
+          <text class="title">签到规则</text>
+          <text>1. 每日点击签到按钮即可完成一次签到</text>
+          <text>2. 签到可获取书币奖励</text>
+          <text
+            >3.连续签到：自首日完成签到开始累计，连续七天签到为一个周期。签到中断，则重新开始计算</text
+          >
+          <text
+            >4. 本活动所有解释权由开发者所有，有任何疑问请联系应用内客服</text
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import router from '@system.router'
+import prompt from '@system.prompt'
+import ad from '@service.ad'
+import { adUnitIds } from '../../assets/data/constant.js'
+
+import {
+  signin_key,
+  firstsignday_key,
+  lastsignday_key,
+  uid_key,
+  reward_sign_type_key
+} from '../../helper/constants'
+
+export default {
+  data: {
+    signInGlods: [],
+    signDaysFlag: [0, 0, 0, 0, 0, 0, 0],
+
+    showRule: false,
+    continuitySignDay: 0,
+    signInfo: [],
+    disabledSign: false,
+    totalSignIn: [
+      {
+        text1: '连续签到 7 日',
+        text2: '70书币',
+        text3: '/7天',
+        totalDay: 7
+      },
+      {
+        text1: '连续签到 14 日',
+        text2: '100书币',
+        text3: '/14天',
+        totalDay: 14
+      },
+      {
+        text1: '连续签到 30 日',
+        text2: '150书币',
+        text3: '/30天',
+        totalDay: 30
+      }
+    ],
+    customRender: ''
+  },
+
+  props: ['pageShow'],
+
+  computed: {
+    signText() {
+      return this.disabledSign ? '已签到' : '点击签到'
+    }
+  },
+
+  async onInit() {
+    this.$watch('pageShow', 'watchPageshowChange')
+  },
+
+  async watchPageshowChange() {
+    if (this.pageShow) {
+      const rewardType = await $utils.getStorage(reward_sign_type_key)
+      this.signInGlods = []
+      this.signDaysFlag = []
+      for (let key in rewardType) {
+        this.signInGlods.push(rewardType[key].goldNum)
+      }
+      this.signInGlods.sort((a, b) => a - b)
+      const res = await $apis.gold.getSignInList({})
+      const signInList = JSON.parse(res.sign_in_list)
+      let continuousList = []
+      for (let key in signInList) {
+        if (signInList[key].sign_in === 0) {
+          continuousList = []
+        } else {
+          continuousList.push(signInList[key].sign_in)
+        }
+      }
+      if (continuousList.length <= 7) {
+        for (let i = 0; i < 7 - continuousList.length; i++) {
+          continuousList.push(0)
+        }
+      } else {
+        continuousList = [0, 0, 0, 0, 0, 0, 0]
+      }
+
+      this.signDaysFlag = continuousList
+      const currentDay = $utils.getCurrentDay()
+      if (signInList[currentDay].sign_in === 1) {
+        this.disabledSign = true
+      }
+      // 广告
+      const provider = ad.getProvider()
+
+      if (provider) {
+        this.customRender = adUnitIds[provider].leftPrightW
+
+        ad.preloadAd({
+          adUnitId: this.customRender,
+          type: 'custom'
+        })
+      }
+    }
+  },
+  handleTurntableClick() {
+    router.push({
+      uri: 'pages/turntable'
+    })
+  },
+  handleRuleClick() {
+    this.showRule = true
+  },
+  handleMaskClick() {
+    this.showRule = false
+  },
+  async handleSignIn() {
+    const uid = await $utils.getStorage(uid_key)
+    if ($utils.isEmptyObject(uid)) {
+      router.push({
+        uri: 'pages/login'
+      })
+      return
+    }
+    if (!this.disabledSign) {
+      prompt.showToast({
+        message: '签到成功'
+      })
+
+      const rewardType = await $utils.getStorage(reward_sign_type_key)
+      let index = this.signInGlods.findIndex(element => element === 0)
+      index = index === -1 ? 0 : index
+      await $apis.gold.signIn({
+        rewardType: `sign_in_${index + 1}`,
+        rewardNum: rewardType[`sign_in_${index + 1}`].goldNum
+      })
+      this.disabledSign = true
+      this.watchPageshowChange()
+    }
+  }
+}
+</script>
+
+<style lang="less">
+@import '../../assets/styles/index.less';
+.mask {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  .content-wrap {
+    position: absolute;
+    top: 300px;
+    left: 150px;
+    width: 500px;
+    height: 600px;
+    background-color: #fff;
+    border-radius: 10px;
+    .flex-box-mixins(column, flex-start, flex-start);
+    .content {
+      padding: 30px;
+      .flex-box-mixins(column, flex-start, flex-start);
+      .title {
+        line-height: 50px;
+      }
+      text {
+        line-height: 50px;
+      }
+    }
+  }
+}
+.wrapper {
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  background-color: @bg;
+  .sign-in {
+    background-color: #fff;
+    padding: @gap-1;
+    width: 95%;
+    margin: @gap-3;
+    height: 400px;
+    border-radius: @gap-1;
+    .flex-box-mixins(column, flex-start, center);
+    .header {
+      .flex-box-mixins(row, space-between, center);
+      height: 70px;
+      width: 100%;
+
+      .rules {
+        width: 240px;
+        height: 70px;
+        background-color: #ffecc4;
+        border-radius: 70px;
+        position: relative;
+        right: -90px;
+        align-items: center;
+        padding: 0 30px;
+        text {
+          color: #f08b35;
+          margin-left: 5px;
+        }
+      }
+    }
+    .content {
+      width: 100%;
+      margin-top: @gap-2;
+      .flex-box-mixins(row, space-between, center);
+      .day-sign {
+        .flex-box-mixins(column, space-between, center);
+        width: @gap-5 * 2;
+        height: @gap-2 * 6;
+        border-radius: @gap-1;
+        padding: 5px 0;
+        image {
+          width: 60px;
+        }
+      }
+    }
+    .footer {
+      margin-top: @gap-4;
+      width: 100%;
+      justify-content: center;
+      .sign-in-click {
+        width: 90%;
+        height: @gap-5 * 2;
+        border-radius: @gap-4;
+        background-color: #f7b3a6;
+        text-align: center;
+        font-size: @gap-4;
+      }
+    }
+  }
+  .total-sign-in {
+    width: 95%;
+    .flex-box-mixins(row, space-between, center);
+
+    .item {
+      width: 30%;
+      background-color: red;
+      border-radius: @gap-2;
+      padding: @gap-1;
+      .flex-box-mixins(column, flex-start, center);
+      text {
+        color: #fff;
+      }
+    }
+  }
+  .turntable {
+    width: 95%;
+    margin-top: @gap-3;
+    .flex-box-mixins(row, space-between, center);
+    .left {
+      width: 48%;
+      padding: @gap-1;
+      background-color: red;
+      border-radius: @gap-2;
+      .flex-box-mixins(row, flex-start, center);
+      image {
+        width: 150px;
+      }
+      text {
+        margin-left: @gap-3;
+        color: #fff;
+      }
+    }
+    .right {
+      width: 48%;
+      padding: @gap-1;
+      background-color: red;
+      border-radius: @gap-2;
+      .flex-box-mixins(row, flex-start, center);
+      image {
+        width: 150px;
+      }
+      text {
+        margin-left: @gap-3;
+        color: #fff;
+      }
+    }
+  }
+}
+</style>

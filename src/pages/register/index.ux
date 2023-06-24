@@ -1,0 +1,171 @@
+<template>
+  <div class="page">
+    <div class="tip-box">
+      <text>注册收集积分，加入书架</text>
+    </div>
+    <div class="login-wrap">
+      <div class="input-box">
+        <input
+          type="number"
+          placeholder="请输入手机号"
+          value="{{phoneValue}}"
+          maxlength="11"
+          onchange="setPhoneValue"
+        />
+      </div>
+      <div class="input-box" style="margin: 70px 0  0 0">
+        <input
+          type="text"
+          placeholder="用户名"
+          value="{{usernameValue}}"
+          maxlength="10"
+          onchange="setUserNameValue"
+        />
+      </div>
+      <div class="input-box" style="margin: 70px 0  0 0">
+        <input
+          type="password"
+          placeholder="请输入密码(大于6位)"
+          value="{{passwordValue}}"
+          onchange="setPasswordValue"
+        />
+      </div>
+
+      <div
+        class="btn-box {{btnDisabled?'disabled':''}}"
+        disabled="{{btnDisabled}}"
+        onclick="goUser"
+      >
+        <text>注册并登录</text>
+      </div>
+      <div class="protocol-box">
+        <text
+          >点击查看<span class="blue">“用户协议”</span>和<span class="blue"
+            >“隐私协议”</span
+          ></text
+        >
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import router from '@system.router'
+import { uid_key, username_key } from '../../helper/constants'
+export default {
+  data: {
+    btnDisabled: true,
+    passwordValue: '',
+    phoneValue: '',
+    usernameValue: ''
+  },
+  onInit() {},
+  setPasswordValue: function(e) {
+    this.passwordValue = e.text
+    this.setBtnStatus()
+  },
+  setPhoneValue: function(e) {
+    this.phoneValue = e.text
+    this.setBtnStatus()
+  },
+  setUserNameValue: function(e) {
+    this.usernameValue = e.text
+    this.setBtnStatus()
+  },
+  setBtnStatus: function() {
+    if (this.phoneValue.length === 11 && this.passwordValue.length > 6) {
+      this.btnDisabled = false
+    } else {
+      this.btnDisabled = true
+    }
+  },
+
+  goUser: async function() {
+    const res = await $apis.user.userRegister({
+      phoneNumber: this.phoneValue,
+      userName: this.usernameValue,
+      passwd: this.passwordValue
+    })
+    if (res.uid) {
+      $utils.setStorage(uid_key, res.uid)
+      $utils.setStorage(username_key, this.usernameValue)
+    }
+    router.replace({
+      uri: 'pages/main'
+    })
+    router.clear()
+  }
+}
+</script>
+
+<style lang="less">
+.page {
+  background-color: #f4f5f7;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.go-back {
+  justify-content: flex-end;
+  padding-right: 40px;
+  image {
+    margin-top: 60px;
+    width: 30px;
+  }
+}
+.tip-box {
+  justify-content: center;
+  margin-top: 30px;
+  height: 200px;
+  align-items: center;
+  text {
+    font-size: 40px;
+    color: #000;
+  }
+}
+.login-wrap {
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+}
+.input-box {
+  width: 84%;
+  background-color: #fff;
+  height: 100px;
+  border: 1px solid #e6e6e6;
+  border-radius: 50px;
+  padding: 0 50px;
+  input {
+    width: 100%;
+  }
+}
+
+.btn-box {
+  width: 84%;
+  height: 100px;
+  margin-top: 40px;
+  justify-content: center;
+  background-color: #c44944;
+  border-radius: 50px;
+  text {
+    color: #fff;
+    font-size: 38px;
+  }
+}
+.disabled {
+  background-color: #efacab;
+}
+
+.register {
+  margin-bottom: 20px;
+}
+.protocol-box {
+  margin-top: 30px;
+  justify-content: center;
+  text {
+    color: #000;
+    .blue {
+      color: #5c76a0;
+    }
+  }
+}
+</style>

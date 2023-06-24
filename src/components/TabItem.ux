@@ -1,0 +1,78 @@
+<template>
+  <list class="nice-list" onscrollbottom="handleScrollBottom">
+    <block for="{{ niceLinksList }}">
+      <NiceList pdata="{{ $item }}"></NiceList>
+    </block>
+    <list-item type="loadMore" class="load-more">
+      <progress class="progress" type="circular" if="isLoadMore"></progress>
+      <text class="loading-tip" if="isLoadMore">正在加载更多</text>
+      <text class="no-more-tip" if="!isLoadMore"
+        >--- 嘿，云集美好，我是有底线的---</text
+      >
+    </list-item>
+  </list>
+</template>
+
+<import name="NiceList" src="./NiceList"></import>
+
+<script>
+export default {
+  data: {
+    currentPageCount: 1,
+    requestParamList: {
+      alive: 1,
+      active: true,
+      pageCount: 1,
+      sortType: -1,
+      sortTarget: 'likes',
+      pageSize: 10
+    },
+    isLoadMore: true,
+    niceLinksList: []
+  },
+  props: ['pdata'],
+  onInit() {
+    this.requestMoreData(this.pdata)
+    this.$watch('pdata', 'onWatchPdata')
+    this.$on('changeTab', this.handelChangeTab)
+  },
+  handleScrollBottom() {
+    this.currentPageCount += 1
+    this.requestMoreData()
+  },
+  handelChangeTab() {
+    this.isLoadMore = true
+  },
+  onWatchPdata() {
+    this.isLoadMore = true
+    this.requestMoreData(this.pdata)
+  },
+  requestMoreData(extraParams = {}) {
+    const linksStorageKey = 'NICE_LINKS_LIST'
+    Object.assign(this.requestParamList, extraParams)
+    this.requestParamList.pageCount = this.currentPageCount
+    // $apis.links
+    //   .getNiceLinks(this.requestParamList)
+    //   .then(async (result) => {
+    //     this.isLoadMore = result.length > 0
+    //     if (this.currentPageCount === 1) {
+    //       this.niceLinksList = result
+    //       const storageList = await $storage.get(linksStorageKey)
+    //       if (!storageList || storageList.length <= 0) {
+    //         $storage.set(linksStorageKey, result)
+    //       }
+    //     } else {
+    //       this.niceLinksList = this.niceLinksList.concat(result)
+    //     }
+    //   })
+    //   .catch(async (error) => {
+    //     $utils.promptMessage(error)
+    //     this.niceLinksList = await $storage.get(linksStorageKey)
+    //     this.isLoadMore = false
+    //   })
+    //   .finally(() => {
+    //     this.$emit('updateCallback', true)
+    //   })
+  }
+}
+</script>

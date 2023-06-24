@@ -1,0 +1,31 @@
+<template>
+  <div class="wrapper">
+    <text class="title">当前版本：{{ version }}</text>
+  </div>
+</template>
+
+<script>
+import app from '@system.app'
+export default {
+  data: {
+    version: ''
+  },
+
+  onInit() {
+    this.version = app.getInfo().versionName
+  }
+}
+</script>
+
+<style>
+.wrapper {
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.title {
+  text-align: center;
+  color: #212121;
+  font-size: 50px;
+}
+</style>

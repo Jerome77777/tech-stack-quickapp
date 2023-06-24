@@ -1,0 +1,112 @@
+<import name="rt-ad-default" src="./ad/default"></import>
+<import name="rt-ad-huawei" src="./ad/huawei"></import>
+<!-- OPPO 新广告组件 -->
+<import name="rt-ad-oppo-beta" src="./ad/oppo-beta"></import>
+<import name="rt-ad-vivo" src="./ad/vivo"></import>
+
+<template>
+  <div>
+    <block if="{{ config && config.adId && config.enable && show }}">
+      <rt-ad-huawei
+        if="{{ brand === 'huawei' }}"
+        config="{{ config }}"
+        styles="{{ styles }}"
+        @show="handleShow"
+        @close="handleClose"
+        @error="handleError"
+      ></rt-ad-huawei>
+      <rt-ad-vivo
+        elif="{{ brand === 'vivo' }}"
+        config="{{ config }}"
+        styles="{{ styles }}"
+        @show="handleShow"
+        @close="handleClose"
+        @error="handleError"
+      ></rt-ad-vivo>
+      <rt-ad-oppo-beta
+        elif="{{ brand === 'oppo' }}"
+        config="{{ config }}"
+        styles="{{ styles }}"
+        @show="handleShow"
+        @close="handleClose"
+        @error="handleError"
+      ></rt-ad-oppo-beta>
+      <rt-ad-default
+        else
+        config="{{ config }}"
+        styles="{{ styles }}"
+        @show="handleShow"
+        @close="handleClose"
+        @error="handleError"
+      ></rt-ad-default>
+    </block>
+  </div>
+</template>
+
+<script>
+import device from '@system.device'
+import defaultStyles from './ad/data.js'
+import { adUnitIds } from '../../assets/data/constant.js'
+import ad from '@service.ad'
+
+export default {
+  props: {
+    styles: {
+      type: Object,
+      default: defaultStyles
+    }
+  },
+
+  data: {
+    brand: '',
+    show: false,
+    config: {
+      enable: false
+    },
+    customRender: ''
+  },
+
+  async onInit() {
+    // 广告
+    const provider = ad.getProvider()
+
+    if (provider) {
+      this.customRender = adUnitIds[provider].goldCustomRender
+      this.config = {
+        adId: this.customRender,
+        enable: true,
+        type: 'nativeAd'
+      }
+    }
+    // 华为传参会覆盖 default 值
+    if (!this.styles) this.styles = defaultStyles
+
+    let result = await device.getInfo()
+    const brand = result.data.brand.toLowerCase()
+
+    if (brand === 'vivo') {
+      this.brand = 'vivo'
+    } else if (['huawei', 'honor'].includes(brand)) {
+      this.brand = 'huawei'
+    } else if (['oppo', 'realme', 'oneplus'].includes(brand)) {
+      this.brand = 'oppo'
+    } else {
+      this.brand = 'default'
+    }
+
+    this.show = true
+  },
+
+  handleShow() {
+    this.$emit('show')
+  },
+
+  handleClose() {
+    this.$emit('close')
+  },
+
+  handleError() {
+    this.$emit('close')
+  }
+}
+</script>

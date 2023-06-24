@@ -1,0 +1,104 @@
+<import name="q-container" src="../../components/container/index"></import>
+<template>
+  <div class="qaui-wrap">
+    <q-container>
+      <text class="content">内容</text>
+    </q-container>
+    <q-container>
+      <div class="two">
+        <text>内容</text>
+        <text>内容</text>
+      </div>
+    </q-container>
+    <q-container flex-direction="column">
+      <div class="title">
+        <image class="icon" src="/common/logo.png"></image>
+        <text>内部标题</text>
+      </div>
+      <div class="three">
+        <text>内容</text>
+        <text>内容</text>
+        <text>内容</text>
+      </div>
+      <text class="footer">底部展示区</text>
+    </q-container>
+    <q-container>
+      <swiper class="swiper" autoplay="true">
+        <text>内容1</text>
+        <text>内容2</text>
+        <text>内容3</text>
+      </swiper>
+    </q-container>
+  </div>
+</template>
+
+<script>
+export default {
+  props: {},
+}
+</script>
+
+<style lang="less">
+.qaui-wrap {
+  background-color: #e0e0e0;
+  padding: 20px 0;
+  flex-direction: column;
+  text {
+    font-size: 12px;
+    color: #000000;
+    text-align: center;
+    background-color: #e7e7e7;
+    border-radius: 3px;
+  }
+  .title {
+    height: 24px;
+    margin-bottom: 12px;
+    .icon {
+      height: 24px;
+      width: 24px;
+      margin-right: 8px;
+    }
+    text {
+      font-size: 16px;
+      font-weight: bold;
+      background-color: #ffffff;
+    }
+  }
+  .content {
+    background-color: #e7e7e7;
+    height: 100px;
+    width: 100%;
+  }
+  .two {
+    height: 100px;
+    width: 100%;
+    justify-content: space-between;
+    text {
+      width: 144px;
+    }
+  }
+  .three {
+    height: 100px;
+    width: 100%;
+    justify-content: space-between;
+    text {
+      width: 93px;
+    }
+  }
+  .footer {
+    margin-top: 12px;
+    background-color: #ffffff;
+    font-size: 14px;
+    text-align: left;
+  }
+  .swiper {
+    background-color: #e7e7e7;
+    padding-bottom: 5px;
+    height: 100px;
+    indicator-size: 5px;
+    border-radius: 3px;
+    indicator-color: #b2b2b2;
+    indicator-selected-color: #666666;
+  }
+}
+</style>
