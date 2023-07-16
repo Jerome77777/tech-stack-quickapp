@@ -3,20 +3,16 @@
     <!-- <PlaceholderLoading v-if="isRequestDataFlag"></PlaceholderLoading> -->
     <div class="title-area">
       <text class="title" @click="onTitleClick">{{
-        dealWithTitle(niceLinksItem.title)
+        niceLinksItem.articleName
       }}</text>
     </div>
     <div class="content">
       <text class="mp-space keywords" v-if="niceLinksItem.keywords">{{
-        niceLinksItem.keywords
+        niceLinksItem.articleCategory + '·' + niceLinksItem.articleLabel
       }}</text>
-      <text class="mp-space desc">{{ niceLinksItem.desc }}</text>
-      <image
-        class="mp-space"
-        src="{{ getLinkScreenshot(niceLinksItem) }}"
-      ></image>
+      <text class="mp-space desc">{{ niceLinksItem.articleIntroduction }}</text>
       <richtext type="html" class="mp-space review">{{
-        reviewNodeStr
+        niceLinksItem.articleContent
       }}</richtext>
       <div class="btn-group">
         <input
@@ -59,12 +55,7 @@ export default {
         '倾城之链, nice links, 资源之家, 新媒体导航, 网站, 利器, 新世界, 技术, 产品, 有趣, 人文, 历史, 工具, 社区, 旅行, 美图, 历史, 人文, 娱乐, 抠图, 高效, 搜商, 搜索, 引擎, 思谷搜, 快应用, 翁天信, 天空之城'
     })
   },
-  onShow() {
-    APP_STATISTICS.page_show(this)
-  },
-  onHide() {
-    APP_STATISTICS.page_hide(this)
-  },
+
   createShortcut() {
     $utils.createShortcut()
   },
@@ -77,15 +68,13 @@ export default {
     }
   },
   setFetchData() {
-    const params = {
-      _id: this.linkId
-    }
     this.isRequestDataFlag = true
-    $apis.links
-      .getNiceLinks(params)
+    $apis.article
+      .getContent({ articleId: this.linkId })
       .then(result => {
-        this.reviewNodeStr = $utils.parseMarkdown(result[0].review)
+        // this.reviewNodeStr = $utils.parseMarkdown(result[0].review)
         this.niceLinksItem = result[0]
+        this.$page.setTitleBar({ text: this.niceLinksItem.articleName })
       })
       .catch(error => {
         console.log(error)
@@ -111,7 +100,7 @@ export default {
     })
   },
   dealWithTitle(titleText) {
-    return $utils.interceptString(titleText, 25)
+    // return $utils.interceptString(titleText, 25)
   },
   /* -------------------OnClickEvent--------------- */
   onKnowMoreTap(item) {
@@ -194,5 +183,20 @@ export default {
       width: 38 * @size-factor;
     }
   }
+}
+pre code {
+  display: inline;
+  max-width: initial;
+  padding: 0;
+  margin: 0;
+  overflow: initial;
+  font-size: 100%;
+  line-height: inherit;
+  word-wrap: normal;
+  white-space: pre;
+  border: 0;
+  -webkit-border-radius: 3px;
+  border-radius: 3px;
+  background-color: transparent;
 }
 </style>

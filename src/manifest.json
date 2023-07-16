@@ -1,6 +1,6 @@
 {
   "package": "com.chuangke.jishuzhan",
-  "name": "技术站",
+  "name": "云端视野",
   "versionName": "1.0.0",
   "versionCode": 1,
   "minPlatformVersion": 1095,
@@ -101,7 +101,7 @@
     "menu": true,
     "pages": {
       "pages/main": {
-        "titleBarText": "阅读"
+        "titleBarText": "云端视野"
       },
       "pages/me": {
         "titleBarText": ""

@@ -27,6 +27,45 @@
     <stack show="{{isShowSidebar}}" class="mask-shadow" @click="hideSidebar">
       <Sidebar open="{{isShowSidebar}}" @hide-sidebar="hideSidebar"></Sidebar>
     </stack>
+    <div class="mask" if="{{showTips}}">
+      <div class="content-wrap">
+        <div class="content">
+          <text class="title">隐私保护说明</text>
+          <list>
+            <list-item type="list" class="list-item">
+              <text>欢迎使用云端视野！</text>
+              <div>
+                <text>
+                  1.我们将通过<a class="link" href="pages/user-agreement"
+                    >《用户协议》</a
+                  >和<a class="link" href="pages/privacy-policy">《隐私政策》</a
+                  >帮助您了解我们收集、使用、存储个人信息的情况。特别是我们所收集的个人信息类型及用途，以及对信息的保护措施。您可以再本软件内"我的-关于我们"中查看<a
+                    class="link"
+                    href="pages/user-agreement"
+                    >《用户协议》</a
+                  >和<a class="link" href="pages/privacy-policy">《隐私政策》</a
+                  >的内容并了解到您所享有的相关权利实现途径。
+                </text>
+              </div>
+
+              <text
+                >2.在使用本软件时，我们会收集、使用设备标识信息用于用户账号生成。</text
+              >
+              <text
+                >3.我们可能会申请以下权限：（1）访问电话，以保障软件服务的安全运营及效率，并用于统计及安全校验；（2）访问本地存储，帮助您将本软件内书籍下载到您的手机存储，以及通过手机存储将您的本地书籍上传到本软件；（3）访问您设备上的媒体内容和文件，用于读写图书封面、活动图片的缓存提升应用的使用流畅度；（4）开启推送，您可以通过开启推送权限来接收本软件的推送消息；（5）开启无限数据，您可以通过连接无线网络或蜂窝数据来实现本软件需要的联网功能。（6）访问安装程序列表，您可以通过获取您的安装程序列表我们确认您是否安装了我们所推广的产品，以便我们及时向您发放相应的奖励；（7）访问剪切板，您可以复制并粘贴读者qq群号码，客服电话；（8）开启后台应用刷新，开启后可以实现听书、语音朗读及语音控制功能；</text
+              >
+              <text>如您同意请点击“同意并继续”按钮以开启我们的服务。</text>
+            </list-item>
+          </list>
+          <div class="btn-item" @click="handleAgree">
+            <text>同意并继续</text>
+          </div>
+          <div style="margin-top: 30px;" @click="handleDisagree">
+            <text>不同意</text>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -39,63 +78,62 @@
 import prompt from '@system.prompt'
 export default {
   private: {
+    showTips: true,
     currentIndex: 0,
     isLoading: false,
     tabBarList: [
       {
         name: '全部',
+        data: []
       },
       {
         name: '前端',
+        data: []
       },
       {
         name: '后端',
+        data: []
       },
       {
         name: '大数据',
+        data: []
       }
     ],
     isShowTabs: true,
     isShowSidebar: false,
-    isShowTabContent: true
+    isShowTabContent: false
   },
 
-  onInit() {},
+  onInit() {
+    if (this.currentIndex === 0) {
+      $apis.article
+        .getList({
+          searchAll: 'true',
+          articleShelf: '',
+          searchType: '',
+          page: 0,
+          pageSize: 10
+        })
+        .then(res => {
+          this.tabBarList[this.currentIndex].data = res
+          this.isShowTabContent = true
+        })
+    }
+  },
 
   onShow() {
     this.$page.setMeta({
-      title: '技术站 - 主页',
+      title: '云端视野 - 主页',
       pic:
         'https://oss.nicelinks.site/nicelinks.site.png?x-oss-process=style/png2jpg',
       description:
-        '技术站，作为一个开放平台，旨在云集全球优秀网站，探索互联网中更广阔的世界；在这里，你可以轻松发现、学习、分享更多有用或有趣的事物。',
+        '云端视野，作为一个开放平台，旨在云集全球优秀网站，探索互联网中更广阔的世界；在这里，你可以轻松发现、学习、分享更多有用或有趣的事物。',
       keywords:
-        '技术站, nice links, 资源之家, 新媒体导航, 网站, 利器, 新世界, 技术, 产品, 有趣, 人文, 历史, 工具, 社区, 旅行, 美图, 历史, 人文, 娱乐, 抠图, 高效, 搜商, 搜索, 引擎, 思谷搜, 快应用, 翁天信, 天空之城'
+        '云端视野, nice links, 资源之家, 新媒体导航, 网站, 利器, 新世界, 技术, 产品, 有趣, 人文, 历史, 工具, 社区, 旅行, 美图, 历史, 人文, 娱乐, 抠图, 高效, 搜商, 搜索, 引擎, 思谷搜, 快应用, 翁天信, 天空之城'
     })
   },
 
   /* -----------------onCallBackEvent----------------- */
-  hideSidebar(response) {
-    this.isShowSidebar = false
-    // $utils.promptMessage(JSON.stringify(response, null, 2))
-    if (!response.detail || response.detail.classify === undefined) return
-
-    this.isLoading = true
-
-    this.isShowTabContent = false
-    const classifyMapping = {
-      skill: '0',
-      resource: '1',
-      life: '2',
-      info: '3'
-    }
-    const tempArray = JSON.parse(JSON.stringify(this.tabBarList))
-    tempArray.forEach(item => {
-      item.classify = classifyMapping[response.detail.classify] || ''
-    })
-    this.tabBarList = tempArray
-    this.isShowTabContent = true
-  },
   onUpdateCallback() {
     this.isLoading = false
   },
@@ -112,12 +150,62 @@ export default {
   onChangeTabIndex(evt) {
     this.$broadcast('changeTab')
     this.currentIndex = evt.index
+  },
+  handleAgree() {
+    this.showTips = false
+  },
+  handleDisagree() {
+    this.$app.exit()
   }
 }
 </script>
 
 <style lang="less">
 @import './../../assets/styles/index.less';
+.link {
+  color: #0000ff;
+}
+
+.mask {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 1);
+  .content-wrap {
+    position: absolute;
+    top: 250px;
+    left: 100px;
+    width: 600px;
+    height: 900px;
+    background-color: #fff;
+    border-radius: 10px;
+    .flex-box-mixins(column, flex-start, flex-start);
+    .content {
+      padding: 30px;
+      .flex-box-mixins(column, flex-start, center);
+      .title {
+        line-height: 80px;
+      }
+      .list-item {
+        .flex-box-mixins(column, flex-start, flex-start);
+      }
+      .btn-item {
+        margin-top: 50px;
+        width: 300px;
+        background-color: #ffe4c4;
+        padding: 20px;
+        border-radius: 20px;
+        .flex-box-mixins(column, center, center);
+        text {
+          line-height: 70px;
+        }
+      }
+      text {
+        line-height: 50px;
+      }
+    }
+  }
+}
 
 .home-page {
   flex: 1;

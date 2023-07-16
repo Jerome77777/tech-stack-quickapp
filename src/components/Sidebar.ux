@@ -11,7 +11,7 @@
       <input
         class="app-title"
         type="button"
-        value="技术站"
+        value="云端视野"
         @click="onTitleBtnClick"
       />
     </div>

@@ -1,7 +1,7 @@
 <template>
   <div class="page">
     <div class="tip-box">
-      <text>注册收集积分，加入书架</text>
+      <text>注册</text>
     </div>
     <div class="login-wrap">
       <div class="input-box">

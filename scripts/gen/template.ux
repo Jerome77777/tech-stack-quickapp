@@ -1,7 +1,12 @@
 <template>
   <div class="page-wrapper @PAGE_CLASS_NAME">
     <div class="wrapper-padding">
-      <input class="button" type="button" onclick="onBtnClick" value="技术站" />
+      <input
+        class="button"
+        type="button"
+        onclick="onBtnClick"
+        value="云端视野"
+      />
     </div>
   </div>
 </template>

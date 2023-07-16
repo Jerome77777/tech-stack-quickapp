@@ -46,33 +46,15 @@ export default {
   onWatchPdata() {
     this.isLoadMore = true
     this.requestMoreData(this.pdata)
+    this.niceLinksList = this.pdata.data
+    console.log('cjf this.nis', this.niceLinksList)
   },
   requestMoreData(extraParams = {}) {
     const linksStorageKey = 'NICE_LINKS_LIST'
     Object.assign(this.requestParamList, extraParams)
     this.requestParamList.pageCount = this.currentPageCount
-    // $apis.links
-    //   .getNiceLinks(this.requestParamList)
-    //   .then(async (result) => {
-    //     this.isLoadMore = result.length > 0
-    //     if (this.currentPageCount === 1) {
-    //       this.niceLinksList = result
-    //       const storageList = await $storage.get(linksStorageKey)
-    //       if (!storageList || storageList.length <= 0) {
-    //         $storage.set(linksStorageKey, result)
-    //       }
-    //     } else {
-    //       this.niceLinksList = this.niceLinksList.concat(result)
-    //     }
-    //   })
-    //   .catch(async (error) => {
-    //     $utils.promptMessage(error)
-    //     this.niceLinksList = await $storage.get(linksStorageKey)
-    //     this.isLoadMore = false
-    //   })
-    //   .finally(() => {
-    //     this.$emit('updateCallback', true)
-    //   })
+    this.niceLinksList = this.pdata.data
+    this.isLoadMore = false
   }
 }
 </script>

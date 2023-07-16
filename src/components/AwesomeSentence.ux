@@ -88,7 +88,7 @@ export default {
   },
   onCopy2ClipboardClick() {
     const constent =
-      $utils.parseMarkdown(this.currentSentenceStr) + `── 技术站 · 箴言锦语`
+      $utils.parseMarkdown(this.currentSentenceStr) + `── 云端视野 · 箴言锦语`
     $utils.copy2clipboard(constent, '👏  已将此条「锦语」复制到您的剪切板')
   }
 }
