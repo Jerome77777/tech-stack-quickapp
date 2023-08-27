@@ -29,6 +29,7 @@
     "less": "^3.9.0",
     "less-loader": "^4.1.0",
     "lint-staged": "^10.5.1",
+    "loadsh": "^0.0.4",
     "onchange": "^5.2.0",
     "prettier": "^1.15.3",
     "prettier-plugin-ux": "^0.3.0"

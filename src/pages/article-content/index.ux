@@ -14,20 +14,6 @@
       <richtext type="html" class="mp-space review">{{
         niceLinksItem.articleContent
       }}</richtext>
-      <div class="btn-group">
-        <input
-          class="button margin mp-space copy-button"
-          type="button"
-          value="复制链接"
-          onclick="onKnowMoreTap"
-        />
-        <input
-          class="button margin mp-space copy-button"
-          type="button"
-          value="分享链接"
-          onclick="onShareLinkTap"
-        />
-      </div>
     </div>
   </div>
 </template>

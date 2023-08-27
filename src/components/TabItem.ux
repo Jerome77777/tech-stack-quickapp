@@ -1,6 +1,6 @@
 <template>
   <list class="nice-list" onscrollbottom="handleScrollBottom">
-    <block for="{{ niceLinksList }}">
+    <block for="{{niceLinksList}}">
       <NiceList pdata="{{ $item }}"></NiceList>
     </block>
     <list-item type="loadMore" class="load-more">
@@ -32,27 +32,21 @@ export default {
   },
   props: ['pdata'],
   onInit() {
-    this.requestMoreData(this.pdata)
-    this.$watch('pdata', 'onWatchPdata')
+    this.requestMoreData()
     this.$on('changeTab', this.handelChangeTab)
+    this.$watch('pdata.data', 'watchPdataChange')
   },
   handleScrollBottom() {
-    this.currentPageCount += 1
-    this.requestMoreData()
+    this.$dispatch('dispatchEvt')
   },
   handelChangeTab() {
     this.isLoadMore = true
+    this.requestMoreData()
   },
-  onWatchPdata() {
-    this.isLoadMore = true
-    this.requestMoreData(this.pdata)
+  watchPdataChange() {
     this.niceLinksList = this.pdata.data
-    console.log('cjf this.nis', this.niceLinksList)
   },
-  requestMoreData(extraParams = {}) {
-    const linksStorageKey = 'NICE_LINKS_LIST'
-    Object.assign(this.requestParamList, extraParams)
-    this.requestParamList.pageCount = this.currentPageCount
+  requestMoreData() {
     this.niceLinksList = this.pdata.data
     this.isLoadMore = false
   }
