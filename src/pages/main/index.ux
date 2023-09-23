@@ -1,33 +1,18 @@
 <template>
   <div class="home-page">
-    <Loading if="{{ isLoading }}" />
-    <my-search-bar
-      @blur="handleSearch"
-      @enterKeyClick="handleSearch"
-    ></my-search-bar>
-    <tabs
-      onchange="onChangeTabIndex"
-      index="{{currentIndex}}"
-      if="{{isShowTabs}}"
-    >
-      <tab-bar class="tab-bar" mode="scrollable">
-        <stack class="tab-item-warp" for="(index, item) in tabBarList">
-          <text class="tab-item {{index===currentIndex ? 'active' : ''}}">{{
-            item.name
-          }}</text>
-          <div if="index===currentIndex" class="line"></div>
-        </stack>
-      </tab-bar>
-      <tab-content if="isShowTabContent">
-        <div for="(index, $item) in tabBarList" tid="{{index}}">
-          <TabItem
-            pdata="{{$item}}"
-            @update-callback="onUpdateCallback"
-            if="index===currentIndex"
-          />
+    <tabs index="{{selectedTab}}" onchange="changeTab">
+      <tab-bar mode="fixed" class="tab-bar">
+        <div class="tab-item" for="tabList1">
+          <text class="tab-title">{{ $item.title }}</text>
         </div>
+      </tab-bar>
+      <tab-content>
+        <home page-show="{{selectedTab === 0}}"></home>
+        <home page-show="{{selectedTab === 1}}"></home>
+        <me page-show="{{selectedTab === 2}}"></me>
       </tab-content>
     </tabs>
+
     <div class="mask" if="{{showTips}}">
       <div class="content-wrap">
         <div class="content">
@@ -53,7 +38,7 @@
                 >2.在使用本软件时，我们会收集、使用设备标识信息用于用户账号生成。</text
               >
               <text
-                >3.我们可能会申请以下权限：（1）访问电话，以保障软件服务的安全运营及效率，并用于统计及安全校验；（2）访问本地存储，帮助您将本软件内书籍下载到您的手机存储，以及通过手机存储将您的本地书籍上传到本软件；（3）访问您设备上的媒体内容和文件，用于读写图书封面、活动图片的缓存提升应用的使用流畅度；（4）开启推送，您可以通过开启推送权限来接收本软件的推送消息；（5）开启无限数据，您可以通过连接无线网络或蜂窝数据来实现本软件需要的联网功能。（6）访问安装程序列表，您可以通过获取您的安装程序列表我们确认您是否安装了我们所推广的产品，以便我们及时向您发放相应的奖励；（7）访问剪切板，您可以复制并粘贴读者qq群号码，客服电话；（8）开启后台应用刷新，开启后可以实现听书、语音朗读及语音控制功能；</text
+                >3.我们可能会申请以下权限：（1）访问电话，以保障软件服务的安全运营及效率，并用于统计及安全校验；（2）访问本地存储，帮助您将本软件内文章下载到您的手机存储，以及通过手机存储将您的本地文章上传到本软件；（3）访问您设备上的媒体内容和文件，用于读写文章封面、活动图片的缓存提升应用的使用流畅度；（4）开启推送，您可以通过开启推送权限来接收本软件的推送消息；（5）开启无限数据，您可以通过连接无线网络或蜂窝数据来实现本软件需要的联网功能。（6）访问安装程序列表，您可以通过获取您的安装程序列表我们确认您是否安装了我们所推广的产品，以便我们及时向您发放相应的奖励；（7）访问剪切板，您可以复制并粘贴读者qq群号码，客服电话；</text
               >
               <text>如您同意请点击“同意并继续”按钮以开启我们的服务。</text>
             </list-item>
@@ -70,43 +55,29 @@
   </div>
 </template>
 
-<import name="TitleBar" src="./../../components/TitleBar"></import>
-<import name="TabItem" src="./../../components/TabItem"></import>
-<import name="Loading" src="./../../components/Loading"></import>
-<import name="my-search-bar" src="apex-ui/components/search-bar/index"></import>
+<import name="home" src="../home"></import>
+<import name="me" src="../me"></import>
 
 <script>
 import prompt from '@system.prompt'
-import { private_agree_key } from '../../helper/constants'
+import { private_agree_key, tab_index } from '../../helper/constants'
 
 export default {
   private: {
     showTips: false,
     currentIndex: 0,
-    isLoading: false,
-    page: 0,
-    pageSize: 10,
-    searchText: '',
-
-    tabBarList: [
+    selectedTab: async () => (await $utils.getStorage(tab_index)) || 0,
+    tabList1: [
       {
-        name: '全部',
-        data: []
+        title: '最新'
       },
       {
-        name: '前端',
-        data: []
+        title: '推荐'
       },
       {
-        name: '后端',
-        data: []
-      },
-      {
-        name: '大数据',
-        data: []
+        title: '我的'
       }
     ],
-    isShowTabs: true,
     isShowTabContent: false
   },
 
@@ -115,131 +86,15 @@ export default {
     if (!tip) {
       this.showTips = true
     }
-    this.$on('dispatchEvt', this.dispatchEvt)
-    this.getData()
-  },
-  async getData(index) {
-    if (!index) {
-      $apis.article
-        .getList({
-          searchAll: 'true',
-          articleShelf: '',
-          searchType: '',
-          page: this.page,
-          pageSize: this.pageSize
-        })
-        .then(res => {
-          this.tabBarList[0].data = []
-          this.tabBarList[0].data = res
-          this.isShowTabContent = true
-        })
-    } else {
-      $apis.article
-        .getListByType({
-          articleShelf: '',
-          searchType: this.tabBarList[index].name,
-          page: this.page,
-          pageSize: this.pageSize
-        })
-        .then(res => {
-          this.tabBarList[index].data = []
-          this.tabBarList[index].data = res
-          this.isShowTabContent = true
-          this.tabBarList.splice(0, 0)
-        })
-    }
-    this.$broadcast('changeTab')
+    console.log('selectedTab', this.selectedTab)
   },
 
-  /* -----------------onCallBackEvent----------------- */
-  onUpdateCallback() {
-    this.isLoading = false
+  changeTab(e) {
+    let index = e.index === undefined ? 0 : e.index
+    this.selectedTab = index
+    $utils.setStorage(tab_index, index)
   },
 
-  dispatchEvt() {
-    this.page++
-    if (this.currentIndex === 0) {
-      $apis.article
-        .getList({
-          searchAll: 'true',
-          articleShelf: '',
-          searchType: '',
-          page: this.page,
-          pageSize: this.pageSize
-        })
-        .then(res => {
-          this.tabBarList[0].data = this.tabBarList[0].data.concat(res)
-          this.isShowTabContent = true
-          if (!res || res.length === 0) {
-            this.page--
-          }
-        })
-    } else {
-      $apis.article
-        .getListByType({
-          articleShelf: '',
-          searchType: this.tabBarList[this.currentIndex].name,
-          page: this.page,
-          pageSize: this.pageSize
-        })
-        .then(res => {
-          this.tabBarList[this.currentIndex].data = this.tabBarList[
-            this.currentIndex
-          ].data.concat(res)
-          this.isShowTabContent = true
-          this.tabBarList.splice(0, 0)
-          if (!res || res.length === 0) {
-            this.page--
-          }
-        })
-    }
-    console.log('this.tabBarList', this.tabBarList)
-  },
-  onWatchCurrentIndex(newValue, oldValue) {},
-  debounce(func, timeout = 300) {
-    let timer
-    return (...args) => {
-      clearTimeout(timer)
-      timer = setTimeout(() => {
-        func.apply(this, args)
-      }, timeout)
-    }
-  },
-  handleSearch(e) {
-    this.searchText = e.detail.event.value
-    this.page = 0
-    $apis.article
-      .getListByName({
-        articleShelf: '',
-        searchType: this.tabBarList[this.currentIndex].name,
-        searchName: this.searchText,
-        page: this.page,
-        pageSize: this.pageSize
-      })
-      .then(res => {
-        this.tabBarList[this.currentIndex].data = []
-        this.tabBarList[this.currentIndex].data = this.tabBarList[
-          this.currentIndex
-        ].data.concat(res)
-        this.isShowTabContent = true
-        this.tabBarList.splice(0, 0)
-        if (!res || res.length === 0) {
-          this.page--
-        }
-      })
-  },
-  onHomeClick() {
-    $utils.route2theUrl('/pages/main')
-  },
-
-  handleTitleClick() {
-    $utils.route2nicelinks()
-  },
-  async onChangeTabIndex(evt) {
-    this.page = 0
-    await this.getData(evt.index)
-    this.currentIndex = evt.index
-  },
   handleAgree() {
     this.showTips = false
     $utils.setStorage(private_agree_key, true)
@@ -297,61 +152,28 @@ export default {
   }
 }
 
-.home-page {
-  flex: 1;
-  flex-direction: column;
-  background-color: @white-grey;
-  .search {
-    background-image: url('./../../assets/icons/search.png');
-  }
-  .share-btn {
-    background-image: url('./../../assets/icons/share.png');
-  }
-  .home-btn {
-    background-image: url('./../../assets/icons/home.png');
-  }
-  .tab-bar {
-    height: @tab-bar-height;
-    background-color: #ffffff;
-    border-top-width: 1px;
-    border-bottom-width: 1px;
-    border-color: @border-grey;
-
-    .tab-item-warp {
-      flex: 1;
-      width: 25%;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-end;
-      color: @grey;
-
-      text {
-        width: 20 * @size-factor;
-        height: @tab-bar-height;
-        line-height: @tab-bar-height;
-        font-size: 4.5 * @size-factor;
-        color: #71777d;
-        text-align: center;
-      }
-
-      .active {
+.tab-bar {
+  background-color: @white;
+  position: fixed;
+  bottom: 0;
+  .border-top-mixins();
+  padding: 15px 0;
+  height: 140px;
+  bottom: 0;
+  .tab-item {
+    flex: 1;
+    height: 140px;
+    .flex-box-mixins(column, center, center);
+    .g22kjdgy {
+      color: #ffffff;
+    }
+    .tab-title {
+      font-size: 40px;
+      color: @text-grey;
+      &:active {
         color: @brand;
-        font-size: 5 * @size-factor;
-      }
-      .line {
-        height: 4px;
-        width: 50%;
-        background-color: @brand;
       }
     }
-  }
-  .mask-shadow {
-    /* Confused：(fixed) 必须加，否则 opacity 不能很好的工作? */
-    position: fixed;
-    height: 100%;
-    width: 100%;
-    background-color: @grey-black;
-    opacity: 0.3;
   }
 }
 </style>

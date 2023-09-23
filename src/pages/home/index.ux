@@ -1,60 +1,40 @@
-<import
-  name="ad-component"
-  src="../../components/ad-component/index.ux"
-></import>
-
 <template>
   <div class="wrapper">
-    <swiper class="swiper">
-      
-    </swiper>
-    <ad-component if="{{activeTab === 0 && !showTips}}"></ad-component>
-    <div class="book-classify">
-      <text class="title">我的书架</text>
-      <div for="{{myBooks}}" class="mybook-introduction">
-      </div>
-      <div if="{{myBooks.length === 0}}" class="empty-data">
-        <text>暂无书籍</text>
-      </div>
-      <tabs class="tabs" onchange="changeTabactive" index="{{activeTab}}">
-        <tab-bar class="tab-bar" mode="fixed">
-          <text class="tab-text">最热分类</text>
-          <text class="tab-text">更多分类</text>
-        </tab-bar>
-        <tab-content class="tab-content">
-          <div class="classify-wrap">
-            <text
-              class="classify-item"
-              for="{{hotclassify}}"
-              @click="handleClassifyClick($item)"
-              >{{ $item }}</text
-            >
-          </div>
-          <div class="classify-wrap">
-            <text
-              class="classify-item"
-              for="{{moreclassify}}"
-              @click="handleClassifyClick($item)"
-              >{{ $item }}</text
-            >
-          </div>
-        </tab-content>
-      </tabs>
-    </div>
-
-    <div class="more-book">
-      <div class="header">
-        <text class="title">更多小说</text>
-        <text>查看更多</text>
-      </div>
-      <div class="content">
-        <div for="{{moreBooks}}" class="mybook-introduction">
-          
+    <Loading if="{{ isLoading }}" />
+    <my-search-bar
+      @blur="handleSearch"
+      @enterKeyClick="handleSearch"
+    ></my-search-bar>
+    <tabs
+      onchange="onChangeTabIndex"
+      index="{{currentIndex}}"
+      if="{{isShowTabs}}"
+    >
+      <tab-bar class="tab-bar" mode="scrollable">
+        <stack class="tab-item-warp" for="(index, item) in tabBarList">
+          <text class="tab-item {{index===currentIndex ? 'active' : ''}}">{{
+            item.name
+          }}</text>
+          <div if="index===currentIndex" class="line"></div>
+        </stack>
+      </tab-bar>
+      <tab-content if="isShowTabContent">
+        <div for="(index, $item) in tabBarList" tid="{{index}}">
+          <TabItem
+            pdata="{{$item}}"
+            @update-callback="onUpdateCallback"
+            if="index===currentIndex"
+          />
         </div>
-      </div>
-    </div>
+      </tab-content>
+    </tabs>
   </div>
 </template>
+
+<import name="TitleBar" src="./../../components/TitleBar.ux"></import>
+<import name="TabItem" src="./../../components/TabItem"></import>
+<import name="Loading" src="./../../components/Loading"></import>
+<import name="my-search-bar" src="apex-ui/components/search-bar/index"></import>
 
 <script>
 import { hotclassify, moreclassify } from '../../assets/data/mock'
@@ -63,17 +43,43 @@ import { private_agree_key } from '../../helper/constants'
 
 export default {
   data: {
-    recommend: [],
-    myBooks: [],
-    moreBooks: [],
-    activeTab: 0,
-    hotclassify,
-    moreclassify,
-    showTips: false
+    showTips: false,
+    currentIndex: 0,
+    isLoading: false,
+    page: 0,
+    pageSize: 10,
+    searchText: '',
+    selectedTab: async () => await $utils.getStorage(tab_index),
+    tabBarList: [
+      {
+        name: '全部',
+        data: []
+      },
+      {
+        name: '前端',
+        data: []
+      },
+      {
+        name: '后端',
+        data: []
+      },
+      {
+        name: '大数据',
+        data: []
+      }
+    ],
+    isShowTabs: true,
+    isShowTabContent: false
   },
 
   async onInit() {
     this.$watch('pageShow', 'watchPageshowChange')
+  },
+
+  async onChangeTabIndex(evt) {
+    this.page = 0
+    await this.getData(evt.index)
+    this.currentIndex = evt.index
   },
 
   async watchPageshowChange() {
@@ -81,18 +87,8 @@ export default {
     if (!tip) {
       this.showTips = true
     }
-    const data = await $apis.book.getAllBooks({
-      searchAll: 'true',
-      bookShelf: '',
-      searchType: '',
-      bookId: ''
-    })
-    this.myBooks = await $apis.book.getUserBooksShelf({
-      searchAll: false,
-      bookShelf: true
-    })
-    this.recommend = $utils.getRandomBooks(data)
-    this.moreBooks = $utils.getRandomBooks(data)
+    this.$on('dispatchEvt', this.dispatchEvt)
+    this.getData()
   },
 
   changeTabactive(e) {
@@ -111,6 +107,125 @@ export default {
   },
   handleAdClose() {
     console.log('close')
+  },
+  async getData(index) {
+    if (!index) {
+      $apis.article
+        .getList({
+          searchAll: 'true',
+          articleShelf: '',
+          searchType: '',
+          page: this.page,
+          pageSize: this.pageSize
+        })
+        .then(res => {
+          const list = res.sort(function() {
+            return 0.5 - Math.random()
+          })
+          this.tabBarList[0].data = []
+          this.tabBarList[0].data = list
+          this.isShowTabContent = true
+        })
+    } else {
+      $apis.article
+        .getListByType({
+          articleShelf: '',
+          searchType: this.tabBarList[index].name,
+          page: this.page,
+          pageSize: this.pageSize
+        })
+        .then(res => {
+          const list = res.sort(function() {
+            return 0.5 - Math.random()
+          })
+          this.tabBarList[index].data = []
+          this.tabBarList[index].data = list
+          this.isShowTabContent = true
+          this.tabBarList.splice(0, 0)
+        })
+    }
+    this.$broadcast('changeTab')
+  },
+
+  /* -----------------onCallBackEvent----------------- */
+  onUpdateCallback() {
+    this.isLoading = false
+  },
+
+  dispatchEvt() {
+    this.page++
+    if (this.currentIndex === 0) {
+      $apis.article
+        .getList({
+          searchAll: 'true',
+          articleShelf: '',
+          searchType: '',
+          page: this.page,
+          pageSize: this.pageSize
+        })
+        .then(res => {
+          this.tabBarList[0].data = this.tabBarList[0].data.concat(res)
+          this.isShowTabContent = true
+          if (!res || res.length === 0) {
+            this.page--
+          }
+        })
+    } else {
+      $apis.article
+        .getListByType({
+          articleShelf: '',
+          searchType: this.tabBarList[this.currentIndex].name,
+          page: this.page,
+          pageSize: this.pageSize
+        })
+        .then(res => {
+          this.tabBarList[this.currentIndex].data = this.tabBarList[
+            this.currentIndex
+          ].data.concat(res)
+          this.isShowTabContent = true
+          this.tabBarList.splice(0, 0)
+          if (!res || res.length === 0) {
+            this.page--
+          }
+        })
+    }
+    console.log('this.tabBarList', this.tabBarList)
+  },
+  onWatchCurrentIndex(newValue, oldValue) {},
+  debounce(func, timeout = 300) {
+    let timer
+    return (...args) => {
+      clearTimeout(timer)
+      timer = setTimeout(() => {
+        func.apply(this, args)
+      }, timeout)
+    }
+  },
+  handleSearch(e) {
+    this.searchText = (e.detail.event && e.detail.event.value) || ''
+    this.page = 0
+    $apis.article
+      .getListByName({
+        articleShelf: '',
+        searchType: this.tabBarList[this.currentIndex].name,
+        searchName: this.searchText,
+        page: this.page,
+        pageSize: this.pageSize
+      })
+      .then(res => {
+        this.tabBarList[this.currentIndex].data = []
+        this.tabBarList[this.currentIndex].data = this.tabBarList[
+          this.currentIndex
+        ].data.concat(res)
+        this.isShowTabContent = true
+        this.tabBarList.splice(0, 0)
+        if (!res || res.length === 0) {
+          this.page--
+        }
+      })
+  },
+  onHomeClick() {
+    $utils.route2theUrl('/pages/main')
   }
 }
 </script>
@@ -119,88 +234,60 @@ export default {
 @import '../../assets/styles/index.less';
 
 .wrapper {
+  flex: 1;
   flex-direction: column;
-  justify-content: flex-start;
-  align-items: center;
-  .swiper {
-    height: @gap-4 * 12;
-    background-color: #fff;
-    margin: @gap-2;
-    border-radius: @gap-2;
-    .book-introduction {
-      width: 100%;
-      height: 100%;
-    }
+  background-color: @white-grey;
+  .search {
+    background-image: url('./../../assets/icons/search.png');
   }
-  .book-classify {
-    .flex-box-mixins(column, flex-start, flex-start);
-    width: 100%;
-    padding: @gap-2 0;
-    border-top-right-radius: @gap-5;
-    border-top-left-radius: @gap-5;
-    background-color: #fff;
-    .title {
-      margin: 0 @gap-3;
-      font-size: @size-factor * 8;
-    }
-    .book-list {
-      .flex-box-mixins(column, flex-start, flex-start);
-    }
-    .mybook-introduction {
-      width: 100%;
-      height: @gap-3 * 14;
-    }
-    .tabs {
-      margin-top: @gap-2;
-    }
-    .tab-content {
-      height: 270px;
-      .classify-wrap {
-        width: 100%;
-        padding: 0 @gap-2;
+  .share-btn {
+    background-image: url('./../../assets/icons/share.png');
+  }
+  .home-btn {
+    background-image: url('./../../assets/icons/home.png');
+  }
+  .tab-bar {
+    height: @tab-bar-height;
+    background-color: #ffffff;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-color: @border-grey;
 
-        .flex-box-mixins(row, flex-start, center);
-        flex-wrap: wrap;
-        .classify-item {
-          text-align: center;
-          height: @gap-5 * 2;
-          width: 220px;
-          background-color: #c3cfe2;
-          border-radius: @gap-4;
-          padding: 0 @gap-1 * 5;
-          margin-left: @gap-2;
-          margin-top: @gap-1;
-        }
+    .tab-item-warp {
+      flex: 1;
+      width: 25%;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      color: @grey;
+
+      text {
+        width: 20 * @size-factor;
+        height: @tab-bar-height;
+        line-height: @tab-bar-height;
+        font-size: 4.5 * @size-factor;
+        color: #71777d;
+        text-align: center;
+      }
+
+      .active {
+        color: @brand;
+        font-size: 5 * @size-factor;
+      }
+      .line {
+        height: 4px;
+        width: 50%;
+        background-color: @brand;
       }
     }
-    .tab-bar {
-      .flex-box-mixins(row, flex-start, center);
-      width: 60%;
-    }
-    .tab-text {
-      font-size: @size-factor * 8;
-      font-weight: bold;
-    }
-    .tab-text:active {
-      color: #000;
-    }
   }
-  .more-book {
+  .mask-shadow {
+    /* Confused：(fixed) 必须加，否则 opacity 不能很好的工作? */
+    position: fixed;
+    height: 100%;
     width: 100%;
-    background-color: #fff;
-    .flex-box-mixins(column, flex-start, center);
-    .header {
-      padding: @gap-2;
-
-      width: 100%;
-      .flex-box-mixins(row, space-between, center);
-      .title {
-        font-size: @size-factor * 8;
-      }
-    }
-    .content {
-      .flex-box-mixins(column, flex-start, flex-start);
-    }
+    background-color: @grey-black;
+    opacity: 0.3;
   }
 }
 .empty-data {
