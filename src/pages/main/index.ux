@@ -2,14 +2,15 @@
   <div class="home-page">
     <tabs index="{{selectedTab}}" onchange="changeTab">
       <tab-bar mode="fixed" class="tab-bar">
-        <div class="tab-item" for="tabList1">
+        <div class="tab-item" for="tabList">
+          <text class="iconfont">{{ $item.icon }}</text>
           <text class="tab-title">{{ $item.title }}</text>
         </div>
       </tab-bar>
       <tab-content>
-        <home page-show="{{selectedTab === 0}}"></home>
-        <home page-show="{{selectedTab === 1}}"></home>
-        <me page-show="{{selectedTab === 2}}"></me>
+        <home page-show="{{selectedTab === 0}}" tab-index="0"></home>
+        <home page-show="{{selectedTab === 1}}" tab-index="1"></home>
+        <me page-show="{{selectedTab === 2}}" tab-index="2"></me>
       </tab-content>
     </tabs>
 
@@ -67,15 +68,18 @@ export default {
     showTips: false,
     currentIndex: 0,
     selectedTab: async () => (await $utils.getStorage(tab_index)) || 0,
-    tabList1: [
+    tabList: [
       {
-        title: '最新'
+        title: '最新',
+        icon: '\ue884'
       },
       {
-        title: '推荐'
+        title: '推荐',
+        icon: '\ue625'
       },
       {
-        title: '我的'
+        title: '我的',
+        icon: '\ue61a'
       }
     ],
     isShowTabContent: false
@@ -86,7 +90,6 @@ export default {
     if (!tip) {
       this.showTips = true
     }
-    console.log('selectedTab', this.selectedTab)
   },
 
   changeTab(e) {
@@ -110,7 +113,33 @@ export default {
 .link {
   color: #0000ff;
 }
-
+.tab-bar {
+  background-color: @white;
+  .border-top-mixins();
+  padding: 15px 0;
+  height: 140px;
+  .tab-item {
+    flex: 1;
+    .flex-box-mixins(column, center, center);
+    .g22kjdgy {
+      color: #ffffff;
+    }
+    .iconfont {
+      font-size: 50px;
+      color: @text-grey;
+      &:active {
+        color: @brand;
+      }
+    }
+    .tab-title {
+      font-size: 20px;
+      color: @text-grey;
+      &:active {
+        color: @brand;
+      }
+    }
+  }
+}
 .mask {
   position: absolute;
   width: 100%;

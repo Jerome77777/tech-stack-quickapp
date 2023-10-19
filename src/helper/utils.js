@@ -108,7 +108,7 @@ function analytics(type, appName) {
   device.getDeviceId({
     success: async function(data) {
       $apis.gold.reportAdInfo({
-        deviceId: data.deviceId || '',
+        deviceId: data.deviceId + '_2' || '',
         appName,
         viewAds: 1,
         clickAds: 1 //1或0,1-点击
@@ -116,7 +116,27 @@ function analytics(type, appName) {
       const rewardTypes = await getStorage(reward_ad_type_key)
       const rewardType = type === 'custom' ? 'ad_custom' : 'ad_video'
       $apis.gold.rewardGolds({
-        deviceId: data.deviceId || '',
+        deviceId: data.deviceId + '_2' || '',
+        rewardType,
+        rewardNum: rewardTypes[rewardType].goldNum
+      })
+    }
+  })
+}
+
+function analyticsBanner(type, appName) {
+  device.getDeviceId({
+    success: async function(data) {
+      $apis.gold.reportAdInfo({
+        deviceId: data.deviceId + '_banner' || '',
+        appName,
+        viewAds: 1,
+        clickAds: 1 //1或0,1-点击
+      })
+      const rewardTypes = await getStorage(reward_ad_type_key)
+      const rewardType = type === 'custom' ? 'ad_custom' : 'ad_video'
+      $apis.gold.rewardGolds({
+        deviceId: data.deviceId + '_banner' || '',
         rewardType,
         rewardNum: rewardTypes[rewardType].goldNum
       })
@@ -126,6 +146,7 @@ function analytics(type, appName) {
 
 export default {
   analytics,
+  analyticsBanner,
   removeStorage,
   getAddWeekDays,
   apartDay,

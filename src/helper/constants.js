@@ -1,4 +1,4 @@
-export const server_address = 'http://122.224.50.45:8081'
+export const server_address = 'http://36.26.81.223:8081'
 export const uid_key = 'x-auth-uid'
 export const username_key = 'x-auth-username'
 export const glodnums_key = 'x-auth-glodnums'

@@ -4,6 +4,7 @@
     <my-search-bar
       @blur="handleSearch"
       @enterKeyClick="handleSearch"
+      @change="handleSearch"
     ></my-search-bar>
     <tabs
       onchange="onChangeTabIndex"
@@ -39,6 +40,7 @@
 <script>
 import { hotclassify, moreclassify } from '../../assets/data/mock'
 import router from '@system.router'
+import { cloneDeep } from 'loadsh'
 import { private_agree_key } from '../../helper/constants'
 
 export default {
@@ -47,6 +49,8 @@ export default {
     currentIndex: 0,
     isLoading: false,
     page: 0,
+    timer: null,
+    timer2: null,
     pageSize: 10,
     searchText: '',
     selectedTab: async () => await $utils.getStorage(tab_index),
@@ -71,6 +75,7 @@ export default {
     isShowTabs: true,
     isShowTabContent: false
   },
+  props: ['tabIndex', 'pageShow'],
 
   async onInit() {
     this.$watch('pageShow', 'watchPageshowChange')
@@ -78,7 +83,7 @@ export default {
 
   async onChangeTabIndex(evt) {
     this.page = 0
-    await this.getData(evt.index)
+    await this.getData(evt.index, false)
     this.currentIndex = evt.index
   },
 
@@ -88,7 +93,8 @@ export default {
       this.showTips = true
     }
     this.$on('dispatchEvt', this.dispatchEvt)
-    this.getData()
+
+    this.getData(null, true)
   },
 
   changeTabactive(e) {
@@ -108,43 +114,48 @@ export default {
   handleAdClose() {
     console.log('close')
   },
-  async getData(index) {
+  async getData(index, isRandom = false) {
+    let _this = this
     if (!index) {
       $apis.article
         .getList({
           searchAll: 'true',
           articleShelf: '',
           searchType: '',
-          page: this.page,
-          pageSize: this.pageSize
+          page: _this.page,
+          pageSize: _this.pageSize
         })
         .then(res => {
+          const sources = cloneDeep(res)
+          console.log(sources)
           const list = res.sort(function() {
             return 0.5 - Math.random()
           })
-          this.tabBarList[0].data = []
-          this.tabBarList[0].data = list
-          this.isShowTabContent = true
+          _this.tabBarList[0].data = []
+          _this.tabBarList[0].data = isRandom ? list : sources
+          _this.isShowTabContent = true
         })
     } else {
       $apis.article
         .getListByType({
           articleShelf: '',
-          searchType: this.tabBarList[index].name,
-          page: this.page,
-          pageSize: this.pageSize
+          searchType: _this.tabBarList[index].name,
+          page: _this.page,
+          pageSize: _this.pageSize
         })
         .then(res => {
+          const sources = cloneDeep(res)
+          console.log(sources + 2)
           const list = res.sort(function() {
             return 0.5 - Math.random()
           })
-          this.tabBarList[index].data = []
-          this.tabBarList[index].data = list
-          this.isShowTabContent = true
-          this.tabBarList.splice(0, 0)
+          _this.tabBarList[index].data = []
+          _this.tabBarList[index].data = isRandom ? list : sources
+          _this.isShowTabContent = true
+          _this.tabBarList.splice(0, 0)
         })
     }
-    this.$broadcast('changeTab')
+    _this.$broadcast('changeTab')
   },
 
   /* -----------------onCallBackEvent----------------- */
@@ -192,37 +203,34 @@ export default {
     console.log('this.tabBarList', this.tabBarList)
   },
   onWatchCurrentIndex(newValue, oldValue) {},
-  debounce(func, timeout = 300) {
-    let timer
-    return (...args) => {
-      clearTimeout(timer)
-      timer = setTimeout(() => {
-        func.apply(this, args)
-      }, timeout)
-    }
-  },
+
   handleSearch(e) {
-    this.searchText = (e.detail.event && e.detail.event.value) || ''
-    this.page = 0
-    $apis.article
-      .getListByName({
-        articleShelf: '',
-        searchType: this.tabBarList[this.currentIndex].name,
-        searchName: this.searchText,
-        page: this.page,
-        pageSize: this.pageSize
-      })
-      .then(res => {
-        this.tabBarList[this.currentIndex].data = []
-        this.tabBarList[this.currentIndex].data = this.tabBarList[
-          this.currentIndex
-        ].data.concat(res)
-        this.isShowTabContent = true
-        this.tabBarList.splice(0, 0)
-        if (!res || res.length === 0) {
-          this.page--
-        }
-      })
+    clearTimeout(this.timer)
+    let _this = this
+    this.timer = setTimeout(function() {
+      _this.searchText =
+        (e.detail && e.detail.event && e.detail.event.value) || ''
+      _this.page = 0
+      $apis.article
+        .getListByName({
+          articleShelf: '',
+          searchType: _this.tabBarList[_this.currentIndex].name,
+          searchName: _this.searchText,
+          page: _this.page,
+          pageSize: _this.pageSize
+        })
+        .then(res => {
+          _this.tabBarList[_this.currentIndex].data = []
+          _this.tabBarList[_this.currentIndex].data = _this.tabBarList[
+            _this.currentIndex
+          ].data.concat(res)
+          _this.isShowTabContent = true
+          _this.tabBarList.splice(0, 0)
+          if (!res || res.length === 0) {
+            _this.page--
+          }
+        })
+    }, 500)
   },
   onHomeClick() {
     $utils.route2theUrl('/pages/main')

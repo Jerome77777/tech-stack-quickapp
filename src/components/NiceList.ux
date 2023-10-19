@@ -24,14 +24,14 @@
         <text class="item username" target="_blank" rel="noopener">
           {{ pdata.articleAuthorName || '' }}
         </text>
-        <text class="separator">分享于</text>
-        <text class="item datetime">{{ pdata.createTime }}</text>
+        <text class="separator">分享</text>
       </div>
     </div>
   </list-item>
 </template>
 
 <script>
+import router from '@system.router'
 export default {
   data: {
     themeList: [],
@@ -42,15 +42,16 @@ export default {
     // 驼峰式在赋值时使用-连接
     'currentIndex'
   ],
-  onInit() {},
+
   /* -------------------OnClickEvent--------------- */
   onModuleClick() {
     // const targetPath = `https://nicelinks.site/post/${this.pdata._id}?utm_source=quickapp`
     // $utils.reute2WebPage({ path: targetPath })
-    $utils.route2theUrl('/pages/article-content', {
-      linkId: this.pdata.articleId
+    router.push({
+      uri: `/pages/article-content?linkId=${this.pdata.articleId}`
     })
   },
+
   onLikeClick() {
     $utils.promptMessage('登录「点赞」功能，即将推出，敬请期待')
   },

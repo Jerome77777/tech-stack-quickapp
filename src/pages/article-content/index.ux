@@ -1,10 +1,30 @@
+<import name="my-popup" src="apex-ui/components/popup/index"></import>
+<import name="my-button" src="apex-ui/components/button/index"></import>
+
 <template>
   <div class="page-wrapper wrapper">
-    <!-- <PlaceholderLoading v-if="isRequestDataFlag"></PlaceholderLoading> -->
+    <my-popup
+      id="popupCenter"
+      position="center"
+      title="提示"
+      content="是否看激励视频?"
+      closable="{{true}}"
+    >
+      <my-button type="success" ontap="handleClickClose('popupCenter')"
+        >确定</my-button
+      >
+      <div class="icon-close" slot="close">
+        <my-icon
+          type="close-circle-outline"
+          size="60"
+          color="#2c3e50"
+        ></my-icon>
+      </div>
+    </my-popup>
     <div class="title-area">
-      <text class="title" @click="onTitleClick">{{
-        niceLinksItem.articleName
-      }}</text>
+      <text class="title" @click="onTitleClick"
+        >{{ niceLinksItem.articleName }}
+      </text>
     </div>
     <div class="content">
       <text class="mp-space keywords" v-if="niceLinksItem.keywords">{{
@@ -19,39 +39,160 @@
 </template>
 
 <script>
+import ad from '@service.ad'
+import { adUnitIds } from '../../assets/data/constant.js'
+import device from '@system.device'
+
 export default {
   protected: {
-    linkId: ''
+    linkId: '9c4a2432c6a24472a89b970941f6ba89'
   },
   private: {
     isRequestDataFlag: true,
+    adUnitIds: adUnitIds,
     niceLinksItem: {},
     reviewNodeStr: '',
-    currentSentenceStr: ''
+    currentSentenceStr: '',
+    adCountMap: [],
+    rewardedVideoAd: null,
+    bannerAd: null,
+    bannerTimeOut: null,
+    videoInterval: null
   },
-  onInit() {
+  async onShow() {
+    this.adCountMap = await $utils.getStorage('ad-count')
+    if (this.adCountMap) {
+      const counts = this.getCurrentDayCount(this.adCountMap)
+      if (counts >= 31) {
+        return
+      }
+    }
+    const _this = this
+    const provider = ad.getProvider()
+    if (adUnitIds[provider].banner) {
+      if (!this.bannerAd) {
+        this.bannerAd = ad.createBannerAd({
+          adUnitId: adUnitIds[provider].banner
+        })
+        this.bannerAd.onLoad(function() {
+          _this.analyticsBanner('banner', '云端视野banner')
+        })
+      }
+      this.bannerAd.show()
+      this.bannerTimeOut = setTimeout(function() {
+        _this.bannerAd.hide()
+      }, 20 * 1000)
+    }
+
+    if (adUnitIds[provider].rewardedVideo) {
+      this.videoInterval = setInterval(() => {
+        _this.showAd()
+      }, 60 * 1000)
+    }
+    this.$child('popupCenter').hide()
+  },
+  onHide() {
+    clearTimeout(this.bannerTimeOut)
+    clearInterval(this.videoInterval)
+  },
+  async onInit() {
     this.setFetchData()
     this.$page.setMeta({
-      title: '倾城之链',
+      title: '云端视野',
       pic:
         'https://oss.nicelinks.site/nicelinks.site.png?x-oss-process=style/png2jpg',
       description:
-        '倾城之链，作为一个开放平台，旨在云集全球优秀网站，探索互联网中更广阔的世界；在这里，你可以轻松发现、学习、分享更多有用或有趣的事物。',
+        '云端视野，作为一个开放平台，旨在云集全球优秀网站，探索互联网中更广阔的世界；在这里，你可以轻松发现、学习、分享更多有用或有趣的事物。',
       keywords:
-        '倾城之链, nice links, 资源之家, 新媒体导航, 网站, 利器, 新世界, 技术, 产品, 有趣, 人文, 历史, 工具, 社区, 旅行, 美图, 历史, 人文, 娱乐, 抠图, 高效, 搜商, 搜索, 引擎, 思谷搜, 快应用, 翁天信, 天空之城'
+        '云端视野, nice links, 资源之家, 新媒体导航, 网站, 利器, 新世界, 技术, 产品, 有趣, 人文, 历史, 工具, 社区, 旅行, 美图, 历史, 人文, 娱乐, 抠图, 高效, 搜商, 搜索, 引擎, 思谷搜, 快应用, 翁天信, 天空之城'
+    })
+  },
+
+  analyticsBanner(type, appName) {
+    device.getDeviceId({
+      success: async function(data) {
+        $apis.gold.reportAdInfo({
+          deviceId: data.deviceId + '_banner' || '',
+          appName,
+          viewAds: 1,
+          clickAds: 1 //1或0,1-点击
+        })
+        const rewardTypes = await getStorage(reward_ad_type_key)
+        const rewardType = type === 'custom' ? 'ad_custom' : 'ad_video'
+        $apis.gold.rewardGolds({
+          deviceId: data.deviceId + '_banner' || '',
+          rewardType,
+          rewardNum: rewardTypes[rewardType].goldNum
+        })
+      }
     })
   },
 
   createShortcut() {
     $utils.createShortcut()
   },
-  getLinkScreenshot(item) {
-    if (item.urlPath) {
-      const hostname = item.urlPath.replace(/^https?:\/\//, '').replace('/', '')
-      return `https://oss.nicelinks.site/${hostname}.png?x-oss-process=style/png2jpg`
-    } else {
-      return 'https://oss.nicelinks.site/nicelinks.site.png?x-oss-process=style/png2jpg'
+  async showAd() {
+    this.adCountMap = await $utils.getStorage('ad-count')
+    if (this.adCountMap) {
+      const counts = this.getCurrentDayCount(this.adCountMap)
+      if (counts >= 31) {
+        return false
+      }
     }
+    this.$child('popupCenter').show()
+    return true
+  },
+  handleClickClose(popup) {
+    this.$child(popup).hide()
+
+    const provider = ad.getProvider()
+
+    if (provider) {
+      if (this.rewardedVideoAd) {
+        this.rewardedVideoAd.load()
+        return
+      }
+      this.rewardedVideoAd = ad.createRewardedVideoAd({
+        adUnitId: adUnitIds[provider].rewardedVideo
+      })
+
+      this.rewardedVideoAd.onLoad(() => {
+        console.log('激励视频广告加载成功')
+        this.rewardedVideoAd.show()
+      })
+      this.rewardedVideoAd.onClose(async res => {
+        if (res && res.isEnded) {
+          $utils.analytics('video', '激励视频')
+          $utils.showToast('已看完激励视频，已发放金币奖励！')
+          const adMap = (await $utils.getStorage('ad-count')) || []
+
+          const currentDay = $utils.getCurrentDay()
+          if (adMap.length > 0) {
+            for (let i = 0; i < adMap.length; i++) {
+              if (adMap[i][0] === currentDay) {
+                adMap[i][1] += 1
+              }
+            }
+          } else {
+            adMap.push([currentDay, 1])
+          }
+          $utils.setStorage('ad-count', adMap)
+          this.adCountMap = adMap
+        } else {
+          console.log('播放中途退出，不下发奖励')
+        }
+      })
+    }
+  },
+  getCurrentDayCount(arr) {
+    const currentDay = $utils.getCurrentDay()
+    for (let i = 0; i < arr.length; i++) {
+      if (arr[i][0] === currentDay) {
+        return arr[i][1]
+        break
+      }
+    }
+    return 0
   },
   setFetchData() {
     this.isRequestDataFlag = true
@@ -71,7 +212,7 @@ export default {
   },
   updatePageMeta() {
     this.$page.setMeta({
-      title: `${this.niceLinksItem.title} | 倾城之链`,
+      title: `${this.niceLinksItem.title} | 云端视野`,
       pic:
         'https://oss.nicelinks.site/nicelinks.site.png?x-oss-process=style/png2jpg',
       description: marked(
@@ -82,7 +223,7 @@ export default {
       ).replace(/<(.|\n)*?>/g, ''),
       keywords:
         this.niceLinksItem.keywords ||
-        '倾城之链, nice links, 资源之家, 新媒体导航, 网站, 利器, 新世界, 技术, 产品, 有趣, 人文, 历史, 工具, 社区, 旅行, 美图, 历史, 人文, 娱乐, 抠图, 高效, 搜商, 搜索, 引擎, 思谷搜, 快应用, 翁天信, 天空之城'
+        '云端视野, nice links, 资源之家, 新媒体导航, 网站, 利器, 新世界, 技术, 产品, 有趣, 人文, 历史, 工具, 社区, 旅行, 美图, 历史, 人文, 娱乐, 抠图, 高效, 搜商, 搜索, 引擎, 思谷搜, 快应用, 翁天信, 天空之城'
     })
   },
   dealWithTitle(titleText) {
@@ -103,7 +244,7 @@ export default {
     ).replace(/<(.|\n)*?>/g, '')
     const params = {
       title: this.niceLinksItem.title,
-      summary: `${summary}来自#倾城之链#「快应用」`,
+      summary: `${summary}来自#云端视野#「快应用」`,
       targetUrl: targetUrl
     }
     $utils.call3thPartyShare(params)

@@ -3,6 +3,7 @@
  * @desc: 应用级别的配置、方法，供所有页面公用；
  */
 import { $utils, $apis } from './helper'
+import device from '@system.device'
 
 /* @desc: 注入方法至全局 global,以便页面调用 */
 const hook2global = global.__proto__ || global
@@ -13,6 +14,22 @@ hook2global.$shelfList = []
 export default {
   $apis: $apis,
   $utils: $utils,
-  $shelfList: hook2global.$shelfList
+  $shelfList: hook2global.$shelfList,
+  onCreate() {
+    console.info('Application onCreate')
+    device.getDeviceId({
+      success: function(data) {
+        device.getInfo({
+          success: function(ret) {
+            $apis.common.pushDeviceInfo({
+              imei: data.deviceId,
+              phoneModel: ret.manufacturer + ret.model,
+              otherDeviceInfo: JSON.stringify(ret)
+            })
+          }
+        })
+      }
+    })
+  }
 }
 </script>

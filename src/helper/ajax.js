@@ -34,7 +34,7 @@ function requestHandle(params) {
 export default {
   post: async function(url, params, jumptoLogin = false) {
     params.requestTimeStamp = new Date().getTime()
-    const uid = await $utils.getStorage(uid_key)
+    const uid = (await $utils.getStorage(uid_key)) || '1'
     if (!$utils.isEmptyObject(uid)) {
       params.uid = uid
     }
